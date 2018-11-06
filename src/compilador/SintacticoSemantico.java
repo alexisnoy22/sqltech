@@ -110,7 +110,11 @@ public class SintacticoSemantico {
     //  *  *   *   *    PEGAR AQUI EL CODIGO DE LOS PROCEDURES  *  *  *  *
     //--------------------------------------------------------------------------
 //Autor: Cabrales Coronado Heber - 13130684
-    private void PROGRAMASQL() {
+    private void PROGRAMASQL(Atributos PROGRAMASQL) {
+
+        Atributos DECLARACION = new Atributos();
+        Atributos SENTENCIAS = new Atributos();
+
         if (preAnalisis.equals("declare") || preAnalisis.equals("if")
                 || preAnalisis.equals("while") || preAnalisis.equals("print")
                 || preAnalisis.equals("select") || preAnalisis.equals("delete")
@@ -121,6 +125,11 @@ public class SintacticoSemantico {
             DECLARACION();
             SENTENCIAS();
             emparejar("end");
+
+            if(DECLARACION.tipo.equals('VACIO') && SENTENCIAS.tipo.equals('VACIO')){
+                PROGRAMASQL.tipo = 'VACIO';
+            }
+
         } else {
             error("[PROGRAMASQL] inicio no correcto" + " Linea " + cmp.be.preAnalisis.numLinea);
         }
