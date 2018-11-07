@@ -37,6 +37,12 @@ public class SintacticoSemantico {
     private Compilador cmp;
     private boolean analizarSemantica = false;
     private String preAnalisis;
+    public static final String VACIO = "vacio";
+    public static final String ERROR_TIPO = "error_tipo";
+
+    public static boolean tiposCompatibles(String tipo1, String tipo2) {
+        return false;
+    }
 
     //--------------------------------------------------------------------------
     // Constructor de la clase, recibe la referencia de la clase principal del 
@@ -120,7 +126,7 @@ public class SintacticoSemantico {
                 || preAnalisis.equals("select") || preAnalisis.equals("delete")
                 || preAnalisis.equals("insert") || preAnalisis.equals("update")
                 || preAnalisis.equals("create") || preAnalisis.equals("drop")
-                || preAnalisis.equals("assign")      || preAnalisis.equals("case")
+                || preAnalisis.equals("assign") || preAnalisis.equals("case")
                 || preAnalisis.equals("end")) {
             DECLARACION();
             SENTENCIAS();
@@ -301,9 +307,8 @@ public class SintacticoSemantico {
             OPERANDO();
             EXPRARIT_P();
 
-        }
-        else if (preAnalisis.equals("(")) {
-            
+        } else if (preAnalisis.equals("(")) {
+
             emparejar("(");
             EXPRARIT();
             emparejar(")");
@@ -347,14 +352,24 @@ public class SintacticoSemantico {
     //14130579 Luis Alfredo Hernandez Montelongo
 // Metodo del procedimiento EXPRREL
 //******************************************************** 
-private void EXPRREL() {
-        if(preAnalisis.equals("num") || preAnalisis.equals("num.num") || preAnalisis.equals("idvar") || preAnalisis.equals("literal") || preAnalisis.equals("id")){
+
+    private void EXPRREL(Atributos EXPRREL) {
+        
+        Atributos EXPRARIT1 = new Atributos();
+        Atributos EXPRARIT2 = new Atributos();
+
+        if (preAnalisis.equals("num") || preAnalisis.equals("num.num") || preAnalisis.equals("idvar") || preAnalisis.equals("literal") || preAnalisis.equals("id")) {
             //EXPRREL -> EXPRARIT oprel EXPRARIT
-            EXPRARIT();
+            EXPRARIT(EXPRARIT1);
             emparejar("oprel");
-            EXPRARIT();
-        }
-        else{
+            EXPRARIT(EXPRARIT2);
+            if (tiposCompatibles(EXPRARIT1.tipo, EXPRARIT2.tipo)
+                    && !EXPRARIT1.tipo.equals(ERROR_TIPO) && !EXPRARIT2.tipo.equals(ERROR_TIPO)) {
+                EXPRREL.tipo = VACIO;
+            } else {
+                EXPRREL.tipo = ERROR_TIPO;
+            }
+        } else {
             error("[EXPRREL]: Se esperaba la sentencia exprrel " + " No. Linea " + cmp.be.preAnalisis.numLinea);
         }
     }
@@ -441,7 +456,7 @@ private void EXPRREL() {
             IGUALACION();
         } else {
             //IGUALACIONP -> empty
-        }            
+        }
     }
 
     //Yair Emmanuel Mireles Ortiz 14130078
@@ -544,65 +559,150 @@ private void EXPRREL() {
 
     //---------------
     //Autor: Alexis Enrique Noyola Saenz - 14131193
-    private void SELECTIVA() {
+    private void SELECTIVA(Atributos SELECTIVA) {
+        
+        Atributos SELWHEN = new Atributos();
+        Atributos SELELSE = new Atributos();
+        
         if (preAnalisis.equals("case")) {
             //SELECTIVA -> case SELWHEN SELELSE end 
             emparejar("case");
-            SELWHEN();
-            SELELSE();
+            SELWHEN(SELWHEN);
+            SELELSE(SELELSE);
             emparejar("end");
+            if(SELWHEN.tipo.equals(VACIO) && SELELSE.tipo.equals(VACIO)) {
+                SELECTIVA.tipo = VACIO;
+            } else {
+                SELECTIVA.tipo = ERROR_TIPO;
+            }
         } else {
             error("[SELECTIVA] : < Se esperaba la sentencia 'case' >." + "No Linea: " + cmp.be.preAnalisis.numLinea);
         }
     }
 
-    private void SELWHEN() {
+    private void SELWHEN(Atributos SELWHEN) {
+        
+        Atributos EXPRCOND = new Atributos();
+        Atributos SENTENCIA = new Atributos();
+        Atributos SELWHEN_P = new Atributos();
+        
         if (preAnalisis.equals("when")) {
             //SELWHEN -> when EXPRCOND then SENTENCIA SELWHEN'
             emparejar("when");
-            EXPRCOND();
+            EXPRCOND(EXPRCOND);
             emparejar("then");
-            SENTENCIA();
-            SELWHEN_P();
+            SENTENCIA(SENTENCIA);
+            SELWHEN_P(SELWHEN_P);
+            if(EXPRCOND.tipo.equals("booleano") && SENTENCIA.tipo.equals(VACIO) && SELWHEN_P.tipo.equals(VACIO)) {
+                SELWHEN.tipo = VACIO;
+            } else {
+                SELWHEN.tipo = ERROR_TIPO;
+            }
         } else {
             error("[SELWHEN] : < Se esperaba la sentencia 'when' >." + "No Linea: " + cmp.be.preAnalisis.numLinea);
         }
     }
 
-    private void SENTENCIA() {
+    private void SENTENCIA(Atributos SENTENCIA) {
         if (preAnalisis.equals("if")) {
             //SENTENCIA -> IFELSE
-            IFELSE();
+            Atributos IFELSE = new Atributos();
+            IFELSE(IFELSE);
+            if(IFELSE.tipo.equals(VACIO)) {
+                SENTENCIA.tipo = VACIO;
+            } else {
+                SENTENCIA.tipo = ERROR_TIPO;
+            }
         } else if (preAnalisis.equals("while")) {
             //SENTENCIA -> SENREP
-            SENREP();
+            Atributos SENREP = new Atributos();
+            SENREP(SENREP);
+            if(SENREP.tipo.equals(VACIO)) {
+                SENTENCIA.tipo = VACIO;
+            } else {
+                SENTENCIA.tipo = ERROR_TIPO;
+            }
         } else if (preAnalisis.equals("print")) {
             //SENTENCIA -> DESPLIEGUE
-            DESPLIEGUE();
+            Atributos DESPLIEGUE = new Atributos();
+            DESPLIEGUE(DESPLIEGUE);
+            if(DESPLIEGUE.equals(VACIO)) {
+                SENTENCIA.tipo = VACIO;
+            } else {
+                SENTENCIA.tipo = ERROR_TIPO;
+            }
         } else if (preAnalisis.equals("assign")) {
             //SENTENCIA -> SENTASIG
-            SENTASIG();
+            Atributos SENTASIG = new Atributos();
+            SENTASIG(SENTASIG);
+            if(SENTASIG.tipo.equals(VACIO)) {
+                SENTENCIA.tipo = VACIO;
+            } else {
+                SENTENCIA.tipo = ERROR_TIPO;
+            }
         } else if (preAnalisis.equals("select")) {
             //SENTENCIA -> SENTSELECT
-            SENTSELECT();
+            Atributos SENTSELECT = new Atributos();
+            SENTSELECT(SENTSELECT);
+            if(SENTSELECT.tipo.equals(VACIO)) {
+                SENTENCIA.tipo = VACIO;
+            } else {
+                SENTENCIA.tipo = ERROR_TIPO;
+            }
         } else if (preAnalisis.equals("delete")) {
             //SENTENCIA -> DELREG
-            DELREG();
+            Atributos DELREG = new Atributos();
+            DELREG(DELREG);
+            if(DELREG.tipo.equals(VACIO)) {
+                SENTENCIA.tipo = VACIO;
+            } else {
+                SENTENCIA.tipo = ERROR_TIPO;
+            }
         } else if (preAnalisis.equals("insert")) {
             //SENTENCIA -> INSERCION
-            INSERCION();
+            Atributos INSERCION = new Atributos();
+            INSERCION(INSERCION);
+            if(INSERCION.tipo.equals(VACIO)) {
+                SENTENCIA.tipo = VACIO;
+            } else {
+                SENTENCIA.tipo = ERROR_TIPO;
+            }
         } else if (preAnalisis.equals("update")) {
             //SENTENCIA -> ACTREGS
-            ACTREGS();
+            Atributos ACTREGS = new Atributos();
+            ACTREGS(ACTREGS);
+            if(ACTREGS.tipo.equals(VACIO)) {
+                SENTENCIA.tipo = VACIO;
+            } else {
+                SENTENCIA.tipo = ERROR_TIPO;
+            }
         } else if (preAnalisis.equals("create")) {
             //SENTENCIA -> TABLA
-            TABLA();
+            Atributos TABLA = new Atributos();
+            TABLA(TABLA);
+            if(TABLA.tipo.equals(VACIO)) {
+                SENTENCIA.tipo = VACIO;
+            } else {
+                SENTENCIA.tipo = ERROR_TIPO;
+            }
         } else if (preAnalisis.equals("drop")) {
             //SENTENCIA -> ELIMTAB
-            ELIMTAB();
+            Atributos ELIMTAB = new Atributos();
+            ELIMTAB(ELIMTAB);
+            if(ELIMTAB.tipo.equals(VACIO)) {
+                SENTENCIA.tipo = VACIO;
+            } else {
+                SENTENCIA.tipo = ERROR_TIPO;
+            }
         } else if (preAnalisis.equals("case")) {
             //SENTENCIA -> SELECTIVA
-            SELECTIVA();
+            Atributos SELECTIVA = new Atributos();
+            SELECTIVA(SELECTIVA);
+            if(SELECTIVA.tipo.equals(VACIO)) {
+                SENTENCIA.tipo = VACIO;
+            } else {
+                SENTENCIA.tipo = ERROR_TIPO;
+            }
         } else {
             error("[SENTENCIA] : < Se esperaba la sentencia SQL valida >." + "No Linea: " + cmp.be.preAnalisis.numLinea);
         }
@@ -612,35 +712,62 @@ private void EXPRREL() {
     //Agustín Pérez Calderón    14130042
     //PRIMEROS(SELWHEN_P) = {PRIMEROS(SELWHEN),empty }
     //----------------------PRIMEROS(SELWHEN) = {when}
-    private void SELWHEN_P() {
+    private void SELWHEN_P(Atributos SELWHEN_P) {
+        
+        Atributos SELWHEN = new Atributos();
+        
         if (preAnalisis.equals("when")) {
             //SELWHEN’ -> SELWHEN
-            SELWHEN();
+            SELWHEN(SELWHEN);
+            if(SELWHEN.tipo.equals(VACIO)) {
+                SELWHEN_P.tipo = VACIO;
+            } else {
+                SELWHEN_P.tipo = ERROR_TIPO;
+            }
         } else {
             //SELWHEN’ -> empty
+            SELWHEN_P.tipo = VACIO;
         }
     }
 
     //PRIMEROS(SELELSE) = {else,empty}
-    private void SELELSE() {
+    private void SELELSE(Atributos SELELSE) {
+        
+        Atributos SENTENCIA = new Atributos();
+        
         if (preAnalisis.equals("else")) {
             //SELELSE -> else SENTENCIA
             emparejar("else");
-            SENTENCIA();
+            SENTENCIA(SENTENCIA);
+            if(SENTENCIA.tipo.equals(VACIO)) {
+                SELELSE.tipo = VACIO;
+            } else {
+                SELELSE.tipo = ERROR_TIPO;
+            }
         } else {
             //SELELSE -> empty
+            SELELSE.tipo = VACIO;
         }
     }
 
     //PRIMEROS(SENREP) = {while}
-    private void SENREP() {
+    private void SENREP(Atributos SENREP) {
+        
+        Atributos EXPRCOND = new Atributos();
+        Atributos SENTENCIAS = new Atributos();
+        
         if (preAnalisis.equals("while")) {
             //SENREP -> while EXPRCOND begin SENTENCIAS end
             emparejar("while");
-            EXPRCOND();
+            EXPRCOND(EXPRCOND);
             emparejar("begin");
-            SENTENCIAS();
+            SENTENCIAS(SENTENCIAS);
             emparejar("end");
+            if(EXPRCOND.tipo.equals("booleano") && SENTENCIAS.tipo.equals(VACIO)) {
+                SENREP.tipo = VACIO;
+            } else {
+                SENREP.tipo = ERROR_TIPO;
+            }
         } else {
             error("[SENREP] : Se esperaba la sentencia while" + " Linea " + cmp.be.preAnalisis.numLinea);
         }
@@ -650,31 +777,49 @@ private void EXPRREL() {
 
 //Primeros (SENTASIG) = {assign}
 //Primeros (SENTSELECT) = {select}
-    private void SENTASIG() {
+    private void SENTASIG(Atributos SENTASIG) {
+        
+        Atributos EXPRARIT = new Atributos();
+        
         if (preAnalisis.equals("assign")) {
             //SENTASIG -> assign idvar opasig EXPRARIT
             emparejar("assign");
             emparejar("idvar");
             emparejar("opasig");
-            EXPRARIT();
+            EXPRARIT(EXPRARIT);
+            if(EXPRARIT.tipo.equals(VACIO)) {
+                SENTASIG.tipo = VACIO;
+            } else {
+                SENTASIG.tipo = ERROR_TIPO;
+            }
         } else {
             error("[SENTASIG]: Se esperaba la sentencia assign"
                     + " No. Linea " + cmp.be.preAnalisis.numLinea);
         }
     }
 
-    private void SENTSELECT() {
+    private void SENTSELECT(Atributos SENTSELECT) {
+        
+        Atributos SENTSELECTC = new Atributos();
+        Atributos EXPRCOND = new Atributos();
+        
         if (preAnalisis.equals("select")) {
             //SENTSELECT -> select idvar opasig id SENTSELECTC from id where EXPRCOND
             emparejar("select");
             emparejar("idvar");
             emparejar("opasig");
             emparejar("id");
-            SENTSELECTC();
+            SENTSELECTC(SENTSELECTC);
             emparejar("from");
             emparejar("id");
             emparejar("where");
-            EXPRCOND();
+            EXPRCOND(EXPRCOND);
+            
+            if(SENTSELECTC.tipo.equals(VACIO) && EXPRCOND.tipo.equals("booleano")) {
+                SENTSELECT.tipo = VACIO;
+            } else {
+                SENTSELECT.tipo = ERROR_TIPO;
+            }
         } else {
             error("[SENTSELECT]: Se esperaba la sentencia select" + " No. Linea " + cmp.be.preAnalisis.numLinea);
         }
@@ -682,50 +827,69 @@ private void EXPRREL() {
 
 //--- Autor: Jose Eduardo Rodriguez Diaz 13130453
     //Primeros (SENTSELECT)= {, , empty}
-    private void SENTSELECTC() {
+    private void SENTSELECTC(Atributos SENTSELECTC1) {
+        
+        Atributos SENTSELECTC2 = new Atributos(); 
+        
         if (preAnalisis.equals(",")) {
             //SENTSELECTC -> , idvar opasig id SENTSELECTC
             emparejar(",");
             emparejar("idvar");
             emparejar("opasig");
             emparejar("id");
-            SENTSELECTC();
-
+            SENTSELECTC(SENTSELECTC2);
+            if(SENTSELECTC2.tipo.equals(VACIO)) {
+                SENTSELECTC1.tipo = VACIO;
+            } else {
+                SENTSELECTC1.tipo = ERROR_TIPO;
+            }
         } else {
             //SENTSELECTC -> empty
         }
     }
     //Primeros ( TIPO ) = {int , float , char}
 
-    private void TIPO() {
+    private void TIPO(Atributos TIPO) {
         if (preAnalisis.equals("int")) {
             // TIPO ---> int
             emparejar("int");
+            TIPO.tipo = "int";
         } else if (preAnalisis.equals("float")) {
             // TIPO ---> float
             emparejar("float");
+            TIPO.tipo = "float";
         } else if (preAnalisis.equals("char")) {
             //TIPO ---> char (num)
             emparejar("char");
             emparejar("(");
             emparejar("num");
             emparejar(")");
+            Linea_BE num = new Linea_BE();
+            TIPO.tipo = "char(" + num.lexema + ")";
         } else {
             error("[TIPO] Se esperaba un tipo de dato int, float , char "
                     + "Linea " + cmp.be.preAnalisis.numLinea);
         }
     }
 
-    private void TABLA() {
+    private void TABLA(Atributos TABLA) {
         //PRIMEROS TABLA = {create}
+        Atributos TABCOLUMNAS = new Atributos(); 
+        
         if (preAnalisis.equals("create")) {
             //TABLA ---> create table id (TABCOLUMNAS)
             emparejar("create");
             emparejar("table");
             emparejar("id");
             emparejar("(");
-            TABCOLUMNAS();
+            TABCOLUMNAS(TABCOLUMNAS);
             emparejar(")");
+            
+            if(TABCOLUMNAS.tipo.equals(VACIO)) {
+                TABLA.tipo = VACIO;
+            } else {
+                TABLA.tipo = ERROR_TIPO;
+            }
 
         } else {
             error("[TABLA] Para crear un tabla es necesario utilizar create"
@@ -736,13 +900,22 @@ private void EXPRREL() {
     //-------------------------------------------------------
     // David Soto Rodriguez     #14130602
     //Primero(TABCOLUMAS) = { id TIPO NULO TABCOLUMNAS_P }
-    private void TABCOLUMNAS() {
+    private void TABCOLUMNAS(Atributos TABCOLUMNAS) {
+        Atributos TIPO = new Atributos();
+        Atributos NULO = new Atributos();
+        Atributos TABCOLUMNAS_P = new Atributos();
+        
         if (preAnalisis.equals("id")) {
             //TABCOLUMNAS -> { id TIPO NULO TABCOLUMNAS_P }
             emparejar("id");
-            TIPO();
-            NULO();
-            TABCOLUMNAS_P();
+            TIPO(TIPO);
+            NULO(NULO);
+            TABCOLUMNAS_P(TABCOLUMNAS_P);
+            if(!TIPO.tipo.equals(ERROR_TIPO) && !NULO.tipo.equals(ERROR_TIPO) && TABCOLUMNAS_P.tipo.equals(VACIO)) {
+                TABCOLUMNAS.tipo = VACIO;
+            } else {
+                TABCOLUMNAS.tipo = ERROR_TIPO;
+            }
         } else {
             //error( "En TABCOLUMNAS" );
             //error("[<nombre-procedure> ]: <descripcion del error>"+ " No.Linea" + cmp.be.preAnalisis.numLinea
@@ -755,13 +928,20 @@ private void EXPRREL() {
     //---------------------------------------------------------
     // David Soto Rodriguez     #14130602
     //Primero(TABCOLUMAS_P) = { , TABCOLUMNAS | empty }
-    private void TABCOLUMNAS_P() {
+    private void TABCOLUMNAS_P(Atributos TABCOLUMNAS_P) {
+        Atributos TABCOLUMNAS = new Atributos();
         if (preAnalisis.equals(",")) {
             //TABCOLUMNAS_P -> {, TABCOLUMNAS }
             emparejar(",");
-            TABCOLUMNAS();
+            TABCOLUMNAS(TABCOLUMNAS);
+            if(TABCOLUMNAS.tipo.equals(VACIO)) {
+                TABCOLUMNAS_P.tipo = VACIO;
+            } else {
+                TABCOLUMNAS_P.tipo = ERROR_TIPO;
+            }
         } else {
             //TABCOLUMNAS_P -> empty
+            TABCOLUMNAS_P.tipo = VACIO;
         }
     }
 }
