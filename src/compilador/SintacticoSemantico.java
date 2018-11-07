@@ -556,37 +556,103 @@ public class SintacticoSemantico {
     private void SENTENCIA(Atributos SENTENCIA) {
         if (preAnalisis.equals("if")) {
             //SENTENCIA -> IFELSE
-            IFELSE();
+            Atributos IFELSE = new Atributos();
+            IFELSE(IFELSE);
+            if(IFELSE.tipo.equals(VACIO)) {
+                SENTENCIA.tipo = VACIO;
+            } else {
+                SENTENCIA.tipo = ERROR_TIPO;
+            }
         } else if (preAnalisis.equals("while")) {
             //SENTENCIA -> SENREP
-            SENREP();
+            Atributos SENREP = new Atributos();
+            SENREP(SENREP);
+            if(SENREP.tipo.equals(VACIO)) {
+                SENTENCIA.tipo = VACIO;
+            } else {
+                SENTENCIA.tipo = ERROR_TIPO;
+            }
         } else if (preAnalisis.equals("print")) {
             //SENTENCIA -> DESPLIEGUE
-            DESPLIEGUE();
+            Atributos DESPLIEGUE = new Atributos();
+            DESPLIEGUE(DESPLIEGUE);
+            if(DESPLIEGUE.equals(VACIO)) {
+                SENTENCIA.tipo = VACIO;
+            } else {
+                SENTENCIA.tipo = ERROR_TIPO;
+            }
         } else if (preAnalisis.equals("assign")) {
             //SENTENCIA -> SENTASIG
-            SENTASIG();
+            Atributos SENTASIG = new Atributos();
+            SENTASIG(SENTASIG);
+            if(SENTASIG.tipo.equals(VACIO)) {
+                SENTENCIA.tipo = VACIO;
+            } else {
+                SENTENCIA.tipo = ERROR_TIPO;
+            }
         } else if (preAnalisis.equals("select")) {
             //SENTENCIA -> SENTSELECT
-            SENTSELECT();
+            Atributos SENTSELECT = new Atributos();
+            SENTSELECT(SENTSELECT);
+            if(SENTSELECT.tipo.equals(VACIO)) {
+                SENTENCIA.tipo = VACIO;
+            } else {
+                SENTENCIA.tipo = ERROR_TIPO;
+            }
         } else if (preAnalisis.equals("delete")) {
             //SENTENCIA -> DELREG
-            DELREG();
+            Atributos DELREG = new Atributos();
+            DELREG(DELREG);
+            if(DELREG.tipo.equals(VACIO)) {
+                SENTENCIA.tipo = VACIO;
+            } else {
+                SENTENCIA.tipo = ERROR_TIPO;
+            }
         } else if (preAnalisis.equals("insert")) {
             //SENTENCIA -> INSERCION
-            INSERCION();
+            Atributos INSERCION = new Atributos();
+            INSERCION(INSERCION);
+            if(INSERCION.tipo.equals(VACIO)) {
+                SENTENCIA.tipo = VACIO;
+            } else {
+                SENTENCIA.tipo = ERROR_TIPO;
+            }
         } else if (preAnalisis.equals("update")) {
             //SENTENCIA -> ACTREGS
-            ACTREGS();
+            Atributos ACTREGS = new Atributos();
+            ACTREGS(ACTREGS);
+            if(ACTREGS.tipo.equals(VACIO)) {
+                SENTENCIA.tipo = VACIO;
+            } else {
+                SENTENCIA.tipo = ERROR_TIPO;
+            }
         } else if (preAnalisis.equals("create")) {
             //SENTENCIA -> TABLA
-            TABLA();
+            Atributos TABLA = new Atributos();
+            TABLA(TABLA);
+            if(TABLA.tipo.equals(VACIO)) {
+                SENTENCIA.tipo = VACIO;
+            } else {
+                SENTENCIA.tipo = ERROR_TIPO;
+            }
         } else if (preAnalisis.equals("drop")) {
             //SENTENCIA -> ELIMTAB
-            ELIMTAB();
+            Atributos ELIMTAB = new Atributos();
+            ELIMTAB(ELIMTAB);
+            if(ELIMTAB.tipo.equals(VACIO)) {
+                SENTENCIA.tipo = VACIO;
+            } else {
+                SENTENCIA.tipo = ERROR_TIPO;
+            }
         } else if (preAnalisis.equals("case")) {
             //SENTENCIA -> SELECTIVA
-            SELECTIVA();
+            Atributos SELECTIVA = new Atributos();
+            SELECTIVA(SELECTIVA);
+            if(SELECTIVA.tipo.equals(VACIO)) {
+                SENTENCIA.tipo = VACIO;
+            } else {
+                SENTENCIA.tipo = ERROR_TIPO;
+            }
         } else {
             error("[SENTENCIA] : < Se esperaba la sentencia SQL valida >." + "No Linea: " + cmp.be.preAnalisis.numLinea);
         }
