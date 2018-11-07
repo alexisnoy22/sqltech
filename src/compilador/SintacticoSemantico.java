@@ -37,6 +37,12 @@ public class SintacticoSemantico {
     private Compilador cmp;
     private boolean analizarSemantica = false;
     private String preAnalisis;
+    public static final String VACIO = "vacio";
+    public static final String ERROR_TIPO = "error_tipo";
+
+    public static boolean tiposCompatibles(String tipo1, String tipo2) {
+        return false;
+    }
 
     //--------------------------------------------------------------------------
     // Constructor de la clase, recibe la referencia de la clase principal del 
@@ -116,7 +122,7 @@ public class SintacticoSemantico {
                 || preAnalisis.equals("select") || preAnalisis.equals("delete")
                 || preAnalisis.equals("insert") || preAnalisis.equals("update")
                 || preAnalisis.equals("create") || preAnalisis.equals("drop")
-                || preAnalisis.equals("assign")      || preAnalisis.equals("case")
+                || preAnalisis.equals("assign") || preAnalisis.equals("case")
                 || preAnalisis.equals("end")) {
             DECLARACION();
             SENTENCIAS();
@@ -251,9 +257,8 @@ public class SintacticoSemantico {
             OPERANDO();
             EXPRARIT_P();
 
-        }
-        else if (preAnalisis.equals("(")) {
-            
+        } else if (preAnalisis.equals("(")) {
+
             emparejar("(");
             EXPRARIT();
             emparejar(")");
@@ -297,14 +302,23 @@ public class SintacticoSemantico {
     //14130579 Luis Alfredo Hernandez Montelongo
 // Metodo del procedimiento EXPRREL
 //******************************************************** 
-private void EXPRREL() {
-        if(preAnalisis.equals("num") || preAnalisis.equals("num.num") || preAnalisis.equals("idvar") || preAnalisis.equals("literal") || preAnalisis.equals("id")){
+
+    private void EXPRREL(Atributos EXPRREL) {
+        Atributos EXPRARIT1 = new Atributos();
+        Atributos EXPRARIT2 = new Atributos();
+
+        if (preAnalisis.equals("num") || preAnalisis.equals("num.num") || preAnalisis.equals("idvar") || preAnalisis.equals("literal") || preAnalisis.equals("id")) {
             //EXPRREL -> EXPRARIT oprel EXPRARIT
-            EXPRARIT();
+            EXPRARIT(EXPRARIT1);
             emparejar("oprel");
-            EXPRARIT();
-        }
-        else{
+            EXPRARIT(EXPRARIT2);
+            if (tiposCompatibles(EXPRARIT1.tipo, EXPRARIT2.tipo)
+                    && !EXPRARIT1.tipo.equals(ERROR_TIPO) && !EXPRARIT2.tipo.equals(ERROR_TIPO)) {
+                EXPRREL.tipo = VACIO;
+            } else {
+                EXPRREL.tipo = ERROR_TIPO;
+            }
+        } else {
             error("[EXPRREL]: Se esperaba la sentencia exprrel " + " No. Linea " + cmp.be.preAnalisis.numLinea);
         }
     }
@@ -391,7 +405,7 @@ private void EXPRREL() {
             IGUALACION();
         } else {
             //IGUALACIONP -> empty
-        }            
+        }
     }
 
     //Yair Emmanuel Mireles Ortiz 14130078
