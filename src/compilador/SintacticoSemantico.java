@@ -122,8 +122,8 @@ public class SintacticoSemantico {
                 || preAnalisis.equals("create") || preAnalisis.equals("drop")
                 || preAnalisis.equals("assign")      || preAnalisis.equals("case")
                 || preAnalisis.equals("end")) {
-            DECLARACION();
-            SENTENCIAS();
+            DECLARACION(DECLARACION);
+            SENTENCIAS(SENTENCIAS);
             emparejar("end");
 
             if(DECLARACION.tipo.equals(VACIO) && SENTENCIAS.tipo.equals(VACIO)){
@@ -151,9 +151,14 @@ public class SintacticoSemantico {
             id = cmp.be.preAnalisis;
             emparejar("id");
             emparejar("set");
-            IGUALACION();
+            IGUALACION(IGUALACION);
+
+            if(checarArchivo(id.lexema || ".db")){
+                EXPCOND.ambito = id.lexema;
+            }
+
             emparejar("where");
-            EXPRCOND();
+            EXPRCOND(EXPCOND);
 
             if(buscaTipo(id.entrada) && IGUALACION.tipo.equals(VACIO) && EXPCOND.tipo.equals(VACIO)){
                 ACTREGS.tipo = VACIO;
@@ -172,13 +177,13 @@ public class SintacticoSemantico {
 
     private void COLUMNAS(Atributos COLUMNAS) {
 
-        Atributos COLUMNAS1 = new Atributos();
+        Atributos COLUMNAS_P = new Atributos();
         Atributos id = new Atributos;
 
         if (preAnalisis.equals("id")) {
             id = cmp.be.preAnalisis;
             emparejar("id");
-            COLUMNAS_P();
+            COLUMNAS_P(COLUMNAS_P);
 
             if(buscaTipo(id.entrada) && COLUMNAS_P.tipo.equals(VACIO)){
                 COLUMNAS.tipo = VACIO;
@@ -202,7 +207,7 @@ public class SintacticoSemantico {
         if (preAnalisis.equals(",")) {
             //COLUMNAS_P -> , COLUMNAS
             emparejar(",");
-            COLUMNAS();
+            COLUMNAS(COLUMNAS);
 
             if(COLUMNAS.tipo.equals(VACIO)){
                 COLUMNAS_P.tipo = VACIO;
@@ -220,13 +225,16 @@ public class SintacticoSemantico {
 //-------------------------------------------------------------------------
 //Fernando Alfonso Caldera Olivas                           15130685
 //PRIMEROS(DECLARACION) = {declare, empty}
-    private void DECLARACION() {
+    private void DECLARACION(Atributos DECLARACION) {
+
+        Atributos TIPO = new Atributos();
+
         if (preAnalisis.equals("declare")) {
             //DECLARACION -> declare idvar TIPO DECLARACION
             emparejar("declare");
             emparejar("idvar");
-            TIPO();
-            DECLARACION();
+            TIPO(TIPO);
+            DECLARACION(DECLARACION);
         } else {
             //DECLARACION -> empty
         }
@@ -235,11 +243,22 @@ public class SintacticoSemantico {
 //-------------------------------------------------------------------------
 //Fernando Alfonso Caldera Olivas                           15130685
 //PRIMEROS(DESPLIEGUE) = {print}
-    private void DESPLIEGUE() {
+    private void DESPLIEGUE(Atributos DESPLIEGUE) {
+
+        Atributos EXPRARIT = new Atributos();
+
         if (preAnalisis.equals("print")) {
             //DESPLIEGUE -> print EXPRARIT
             emparejar("print");
-            EXPRARIT();
+            EXPRARIT(EXPRARIT);
+
+            if(EXPRARIT.tipo.equals(VACIO)){
+                DESPLIEGUE.tipo = VACIO;
+            }
+            else{
+                DESPLIEGUE.tipo = ERROR_TIPO;
+            }
+
         } else {
             error("[DESPLIEGUE]: Se esperaba \"print\" en linea " + cmp.be.preAnalisis.numLinea);
         }
@@ -252,40 +271,76 @@ public class SintacticoSemantico {
     //Primeros(EXPRESIONES) = {Primeros(EXPRARIT)}
     //                      = {num,num.num,idvar,literal,id,(}
     //Primeros(EXPRESIONES_P) = {, , empty}
-    private void DELREG() {
+    private void DELREG(Atributos DELREG) {
+
+        Atributos EXPCOND = new Atributos();
+        Linea_BE id = new Linea_BE();
+
+
         if (preAnalisis.equals("delete")) {
             // DELREG -> delete from id where EXPRCOND
             emparejar("delete");
             emparejar("from");
+            id = cmp.be.preAnalisis;
             emparejar("id");
             emparejar("where");
-            EXPRCOND();
+            EXPCOND.ambito = id.lexema;
+            EXPRCOND(EXPCOND);
+            if(buscaTipo(id.entrada).equals("tabla") && EXPCOND.tipo.equals("boolean")){
+                DELREG.tipo = VACIO;
+            }
+            else{
+                DELREG.tipo = ERROR_TIPO;
+            }
+
         } else {
             error("[DELREG]: Se esperaba la sentencia delete-from");
         }
     }
 
     //--------------------------------------------------------------------------
-    private void EXPRESIONES() {
+    private void EXPRESIONES(Atributos EXPRESIONES) {
+
+        Atributos EXPRARIT = new Atributos();
+        Atributos EXPRESIONES_P = new Atributos();
+
         if (preAnalisis.equals("num") || preAnalisis.equals("num.num")
                 || preAnalisis.equals("idvar") || preAnalisis.equals("literal")
                 || preAnalisis.equals("id") || preAnalisis.equals("(")) {
             //EXPRESIONES -> EXPRARIT   EXPRESIONES’
             //EXPRARIT -> OPERANDO,(EXPRARIT)
             //OPERANDO -> num , num.num , idvar , literal , id
-            EXPRARIT();
-            EXPRESIONES_P();
+            EXPRARIT(EXPRARIT);
+            EXPRESIONES_P(EXPRESIONES_P);
+
+            if(EXPRARIT.tipo.equals(VACIO) && EXPRESIONES_P.tipo.equals(VACIO)){
+                EXPRESIONES.tipo = VACIO;
+            }
+            else{
+                EXPRESIONES.tipo = ERROR_TIPO;
+            }
+
         } else {
             error("[EXPRESIONES] : se esperaba la sentencia num");
         }
     }
     //-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-    private void EXPRESIONES_P() {
+    private void EXPRESIONES_P(Atributos EXPRESIONES_P) {
+
+        Atributos EXPRESIONES = new Atributos();
+
         if (preAnalisis.equals(",")) {
             //EXPRESIONES -> ,
             emparejar(",");
-            EXPRESIONES();
+            EXPRESIONES(EXPRESIONES);
+
+            if(EXPRESIONES.tipo.equals(VACIO)){
+                EXPRESIONES_P.tipo = VACIO;
+            }
+            else{
+                EXPRESIONES_P.tipo = ERROR_TIPO;
+            }
         } else {
             //EXPRESIONES_P-> empty
         }
@@ -294,20 +349,37 @@ public class SintacticoSemantico {
     //OCTAVIO HERNANDEZ AGUILAR No.15130500
 //PRIMEROS num,num.num,idvar,literal,id
 
-    private void EXPRARIT() {
+    private void EXPRARIT(Atributos EXPRARIT) {
+
+        Atributos OPERANDO = new Atributos();
+        Atributos EXPRARIT_P = new Atributos();
+        Atributos EXPRARIT = new Atributos();
 
         if (preAnalisis.equals("num") || preAnalisis.equals("num.num") || preAnalisis.equals("idvar") || preAnalisis.equals("literal") || preAnalisis.equals("id")) {
             // EXPARIT-> EXPARIT EXPARIT'
-            OPERANDO();
-            EXPRARIT_P();
+            OPERANDO(OPERANDO);
+            EXPRARIT_P(EXPRARIT_P);
 
+            if(OPERANDO.tipo.equals(VACIO) && EXPRARIT_P.tipo.equals(VACIO)){
+                EXPRARIT.tipo = VACIO;
+            }
+            else{
+                EXPRARIT.tipo = ERROR_TIPO;
+            }
         }
         else if (preAnalisis.equals("(")) {
             
             emparejar("(");
-            EXPRARIT();
+            EXPRARIT(EXPRARIT);
             emparejar(")");
-            EXPRARIT_P();
+            EXPRARIT_P(EXPRARIT_P);
+
+            if(EXPRARIT.tipo.equals(VACIO) && EXPRARIT_P.tipo.equals(VACIO)){
+                EXPRARIT.tipo = VACIO;
+            }
+            else{
+                EXPRARIT.tipo = ERROR_TIPO;
+            }
         } else {
             error("[EXPARIT]: inicio no correcto " + "linea" + cmp.be.preAnalisis.numLinea);
         }
@@ -315,16 +387,33 @@ public class SintacticoSemantico {
 
 //OCTAVIO HERNANDEZ AGUILAR No.15130500--------------------------------------------------------
 //PRIMEROS opsuma, opmult , empty
-    private void EXPRARIT_P() {
+    private void EXPRARIT_P(Atributos EXPRARIT_P) {
+
+        Atributos EXPRARIT = new Atributos();
+
         if (preAnalisis.equals("opsuma")) {
             //EXPARIT_P -> opmult
             emparejar("opsuma");
-            EXPRARIT();
+            EXPRARIT(EXPRARIT);
+            if(EXPRARIT.tipo.equals(VACIO)){
+                EXPRARIT_P.tipo = VACIO;
+            }
+            else{
+                EXPRARIT_P.tipo = ERROR_TIPO;
+            }
+
         } else {
             if (preAnalisis.equals("opmult")) {
                 //EXPERIT_P -> opmult
                 emparejar("opmult");
-                EXPRARIT();
+                EXPRARIT(EXPRARIT);
+
+                if(EXPRARIT.tipo.equals(VACIO)){
+                    EXPRARIT_P.tipo = VACIO;
+                }
+                else{
+                    EXPRARIT_P.tipo = ERROR_TIPO;
+                }
             } else {
                 // EXPARIT_P -> empty
             }
@@ -333,11 +422,22 @@ public class SintacticoSemantico {
 
 //OCTAVIO HERNANDEZ AGUILAR No.15130500---------------------------------------------------------
 //PRIMEROS (EXPRCOND )= {num | num.num | idvar | literal | id}
-    private void EXPRCOND() {
+    private void EXPRCOND(Atributos EXPRCOND) {
+
+        Atributos EXPRLOG = new Atributos();
+        Atributos EXPRREL = new Atributos();
+
         if (preAnalisis.equals("num") || preAnalisis.equals("num.num") || preAnalisis.equals("idvar") || preAnalisis.equals("literal") || preAnalisis.equals("id")) {
-            // EXPRCOND -> EXPRCOND EXPRREL
-            EXPRREL();
-            EXPRLOG();
+            // EXPRCOND -> EXPRREL EXPRLOG
+            EXPRREL(EXPRREL);
+            EXPRLOG(EXPRLOG);
+
+            if(EXPRREL.tipo.equals(VACIO) && EXPRLOG.tipo.equals(VACIO)){
+                EXPRCOND.tipo = VACIO;
+            }
+            else{
+                EXPRCOND.tipo = ERROR_TIPO;
+            }
         } else {
             error("[EXPRCOND]: inicio no correcto " + "linea" + cmp.be.preAnalisis.numLinea);
         }
