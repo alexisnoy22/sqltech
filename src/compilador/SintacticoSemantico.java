@@ -195,11 +195,23 @@ public class SintacticoSemantico {
 //-------------------------------------------------------------------------
 //Fernando Alfonso Caldera Olivas                           15130685
 //PRIMEROS(COLUMNAS_P) = {,, empty}
-    private void COLUMNAS_P() {
+    private void COLUMNAS_P(Atributos COLUMNAS_P) {
+
+        Atributos COLUMNAS = new Atributos();
+
         if (preAnalisis.equals(",")) {
             //COLUMNAS_P -> , COLUMNAS
             emparejar(",");
             COLUMNAS();
+
+            if(COLUMNAS.tipo == 'VACIO'){
+                COLUMNAS_P.tipo = 'VACIO';
+            }
+            else{
+                COLUMNAS_P.tipo = 'ERROR_TIPO';
+            }
+
+
         } else {
             //COLUMNAS_P -> empty
         }
