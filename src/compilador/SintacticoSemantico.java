@@ -26,11 +26,16 @@
  *:                                 ocurrio el error.
  *: 08/Sep/2015 FGil                -Se dejo lista para iniciar un nuevo analizador
  *:                                 sintactico.
+ *: 06/11/2018  FCaldera            -Se agregaron las constantes "VACIO" y "ERROR_TIPO", 
+ *:                                  así como el método "tiposCompatibles", "buscaTipo"
+ *:                                  y checarArchivo.
  *:-----------------------------------------------------------------------------
  */
 package compilador;
 
-import javax.swing.JOptionPane;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 
 public class SintacticoSemantico {
 
@@ -40,10 +45,131 @@ public class SintacticoSemantico {
     public static final String VACIO = "vacio";
     public static final String ERROR_TIPO = "error_tipo";
 
-    public static boolean tiposCompatibles(String tipo1, String tipo2) {
+    public boolean tiposCompatibles(String tipo1, String tipo2) {
         return false;
     }
 
+    public String buscaTipo(int entrada) {
+        return cmp.ts.buscaTipo(entrada);
+    }
+
+    /*----------------------------------------------------------------------------------------*/
+    // Metodo para comprobar la existencia en disco del archivo "nomarchivo" 
+    // y en su caso cargar su contenido en la Tabla de Simbolos.
+    // El argumento representa el nombre de un archivo de texto con extension
+    //  ".db" que contiene el esquema (dise�o) de una tabla de base de datos. 
+    // Los archivos .db tienen el siguiente dise�o:
+    //     Dato            ColIni    ColFin
+    //     ==================================
+    //     nombre-columna  1         25
+    //     tipo-de-dato    30        40
+    //
+    // Ejemplo:  alumnos.db
+    //          1         2         3        
+    // 1234567890123456789012345678901234567890
+    // ==========================================
+    // numctrl                      char(8)  
+    // nombre                       char(25)
+    // edad                         int
+    // promedio                     float
+    //
+    // Cada columna se carga en la Tabla de Simbolos con Complex = "id" y
+    // Tipo = "columna(t)"  siendo t  el tipo de dato de la columna.
+    // ----------------------------------------------------------------------
+    // 20/Oct/2018: Si en la T.S. ya existe la columna con el mismo ambito 
+    // que el que se va a registrar solo se sustituye el TIPO si est� en blanco.
+    // Si existe la columna pero no tiene ambito entonces se rellenan los datos
+    // del tipo y el ambito. 
+    private boolean checarArchivo(String nomarchivo) {
+        FileReader fr = null;
+        BufferedReader br = null;
+        String linea = null;
+        String columna = null;
+        String tipo = null;
+        String ambito = null;
+        boolean existeArch = false;
+        int pos;
+
+        try {
+            // Intentar abrir el archivo con el dise�o de la tabla  
+            fr = new FileReader(nomarchivo);
+            cmp.ts.anadeTipo(cmp.be.preAnalisis.getEntrada(), "tabla");
+            br = new BufferedReader(fr);
+
+            // Leer linea x linea, cada linea es la especificacion de una columna
+            linea = br.readLine();
+            while (linea != null) {
+                // Extraer nombre y tipo de dato de la columna
+                try {
+                    columna = linea.substring(0, 24).trim();
+                } catch (Exception err) {
+                    columna = "ERROR";
+                }
+                try {
+                    tipo = linea.substring(29).trim();
+                } catch (Exception err) {
+                    tipo = "ERROR";
+                }
+                try {
+                    ambito = nomarchivo.substring(0, nomarchivo.length() - 3);
+                } catch (Exception err) {
+                    ambito = "ERROR";
+                }
+                // Agregar a la tabla de simbolos
+                Linea_TS lts = new Linea_TS("id",
+                        columna,
+                        "COLUMNA(" + tipo + ")",
+                        ambito
+                );
+                // Checar si en la Tabla de Simbolos existe la entrada para un 
+                // lexema y ambito iguales al de columna y ambito de la tabla .db
+                if ((pos = cmp.ts.buscar(columna, ambito)) > 0) {
+                    // YA EXISTE: Si no tiene tipo asignarle el tipo columna(t) 
+                    if (cmp.ts.buscaTipo(pos).trim().isEmpty()) {
+                        cmp.ts.anadeTipo(pos, tipo);
+                    }
+                } else {
+                    // NO EXISTE: Buscar si en la T. de S. existe solo el lexema de la columna
+                    if ((pos = cmp.ts.buscar(columna)) > 0) {
+                        // SI EXISTE: checar si el ambito esta en blanco
+                        Linea_TS aux = cmp.ts.obt_elemento(pos);
+                        if (aux.getAmbito().trim().isEmpty()) {
+                            // Ambito en blanco rellenar el tipo y el ambito  
+                            cmp.ts.anadeTipo(pos, "COLUMNA(" + tipo + ")");
+                            cmp.ts.anadeAmbito(pos, ambito);
+
+                        } else {
+                            // Insertar un nuevo elemento a la tabla de simb.
+                            cmp.ts.insertar(lts);
+                        }
+                    } else {
+                        // NO EXISTE: insertar un nuevo elemento a la tabla de simb.
+                        cmp.ts.insertar(lts);
+                    }
+                }
+
+                // Leer siguiente linea
+                linea = br.readLine();
+            }
+            existeArch = true;
+        } catch (IOException ex) {
+            System.out.println(ex);
+        } finally {
+            // Cierra los streams de texto si es que se crearon
+            try {
+                if (br != null) {
+                    br.close();
+                }
+                if (fr != null) {
+                    fr.close();
+                }
+            } catch (IOException ex) {
+            }
+        }
+        return existeArch;
+    }
+
+    /*----------------------------------------------------------------------------------------*/
     //--------------------------------------------------------------------------
     // Constructor de la clase, recibe la referencia de la clase principal del 
     // compilador.
@@ -326,29 +452,43 @@ public class SintacticoSemantico {
 //14130579 Luis Alfredo Hernandez Montelongo     
 // Metodo del procedimiento EXPRLOG 
 //******************************************************** 
-    private void EXPRLOG() {
+    private void EXPRLOG(Atributos EXPRLOG) {
+        Atributos EXPRREL = new Atributos();
+
         if (preAnalisis.equals("and")) {
             //EXPRLOG-->and EXPRREL
             emparejar("and");
-            EXPRREL();
+            EXPRREL(EXPRREL);
+            EXPRLOG.tipo = EXPRREL.tipo;
         } else if (preAnalisis.equals("or")) {
             //EXPRLOG-->or EXPRREL
             emparejar("or");
-            EXPRREL();
+            EXPRREL(EXPRREL);
+            EXPRLOG.tipo = EXPRREL.tipo;
         } else {
             //EXPRLOG--> empty 
+            EXPRLOG.tipo = VACIO;
         }
     }
 
 //14130579 Luis Alfredo Hernandez Montelongo 
 // Metodo del procedimiento ELIMTAB
 //******************************************************** 
-    private void ELIMTAB() {
+    private void ELIMTAB(Atributos ELIMTAB) {
+
+        Linea_BE id = new Linea_BE();
+
         if (preAnalisis.equals("drop")) {
             //ELIMTAB-->drop table id
             emparejar("drop");
             emparejar("table");
+            id = cmp.be.preAnalisis;
             emparejar("id");
+            if (buscaTipo(id.entrada).equals("tabla")) {
+                ELIMTAB.tipo = VACIO;
+            } else {
+                ELIMTAB.tipo = ERROR_TIPO;
+            }
         } else {
             error("[ELIMTAB]: Se esperaba la sentencia elimtab " + " No. Linea " + cmp.be.preAnalisis.numLinea);
         }
@@ -357,41 +497,65 @@ public class SintacticoSemantico {
     //--------------------------------------------------------------------
     // Nombre: JOSE ENRIQUE IBARRA MANRIQUEZ. No. Control: 15130713
 //PRIMEROS(IFELSE) = { if }
-    private void IFELSE() {
+    private void IFELSE(Atributos IFELSE) {
+        Atributos EXPRCOND = new Atributos();
+        Atributos SENTENCIAS = new Atributos();
+        Atributos IFELSE_P = new Atributos();
+
         if (preAnalisis.equals("if")) {
             //IFELSE -> if EXPRCOND begin SENTENCIAS end IFELSE_P
             emparejar("if");
-            EXPRCOND();
+            EXPRCOND(EXPRCOND);
             emparejar("begin");
-            SENTENCIAS();
+            SENTENCIAS(SENTENCIAS);
             emparejar("end");
-            IFELSE_P();
+            IFELSE_P(IFELSE_P);
+            if (EXPRCOND.tipo.equals("boolean") && SENTENCIAS.tipo.equals(VACIO)
+                    && IFELSE_P.tipo.equals(VACIO)) {
+                IFELSE.tipo = VACIO;
+            } else {
+                IFELSE.tipo = ERROR_TIPO;
+            }
         } else {
             error("[IFELSE]: SE ESPERABA UNA SENTENCIA DEL TIPO IF-ELSE " + "No. Línea: " + cmp.be.preAnalisis.numLinea);
         }
     }
 
 //PRIMEROS(IFELSE_P) = { else, empty }
-    private void IFELSE_P() {
+    private void IFELSE_P(Atributos IFELSE_P) {
+        Atributos SENTENCIAS = new Atributos();
+
         if (preAnalisis.equals("else")) {
             //IFELSE_P -> else begin SENTENCIAS end
             emparejar("else");
             emparejar("begin");
-            SENTENCIAS();
+            SENTENCIAS(SENTENCIAS);
             emparejar("end");
+            IFELSE_P.tipo = SENTENCIAS.tipo;
         } else {
             //IFELSE_P produce empty
+            IFELSE_P.tipo = VACIO;
         }
     }
 
 //PRIMEROS(IGUALACION) = { id }
-    private void IGUALACION() {
+    private void IGUALACION(Atributos IGUALACION) {
+        Atributos EXPRARIT = new Atributos();
+        Atributos IGUALACIONP = new Atributos();
+        Linea_BE id = new Linea_BE();
+
         if (preAnalisis.equals("id")) {
             //IGUALACION -> id opasig EXPRARIT IGUALACIONP
             emparejar("id");
             emparejar("opasig");
-            EXPRARIT();
-            IGUALACIONP();
+            EXPRARIT(EXPRARIT);
+            IGUALACIONP(IGUALACIONP);
+            if (tiposCompatibles(buscaTipo(id.entrada), EXPRARIT.tipo)
+                    && IGUALACIONP.tipo.equals(VACIO)) {
+                IGUALACION.tipo = VACIO;
+            } else {
+                IGUALACION.tipo = ERROR_TIPO;
+            }
         } else {
             error("[IGUALACION]: SE ESPERABA UNA SENTENCIA DE IGUALACIÓN " + "No. Línea: " + cmp.be.preAnalisis.numLinea);
         }
@@ -399,29 +563,44 @@ public class SintacticoSemantico {
 
 //---------------------------
 //YAIR EMMANUEL MIERELES ORTIZ No.Ctrl: 14130078
-    private void IGUALACIONP() {
+    private void IGUALACIONP(Atributos IGUALACIONP) {
+        Atributos IGUALACION = new Atributos();
+
         if (preAnalisis.equals(",")) {//IGUALACIONP -> { , IGUALACION }
             emparejar(",");
-            IGUALACION();
+            IGUALACION(IGUALACION);
+            IGUALACIONP.tipo = IGUALACION.tipo;
         } else {
             //IGUALACIONP -> empty
+            IGUALACIONP.tipo = VACIO;
         }
     }
 
     //Yair Emmanuel Mireles Ortiz 14130078
-    private void INSERCION() {
+    private void INSERCION(Atributos INSERCION) {
+        Atributos COLUMNAS = new Atributos();
+        Atributos EXPRESIONES = new Atributos();
+        Linea_BE id = new Linea_BE();
+
         if (preAnalisis.equals("insert")) {
             //INCERCION -> { insert into id ( COLUMNAS ) values ( EXPRESION )}
             emparejar("insert");
             emparejar("into");
+            id = cmp.be.preAnalisis;
             emparejar("id");
             emparejar("(");
-            COLUMNAS();
+            COLUMNAS(COLUMNAS);
             emparejar(")");
             emparejar("values");
             emparejar("(");
-            EXPRESIONES();
+            EXPRESIONES(EXPRESIONES);
             emparejar(")");
+            if (checarArchivo(id.lexema + ".db") && COLUMNAS.tipo.equals(VACIO)
+                    && EXPRESIONES.tipo.equals(VACIO)) {
+                INSERCION.tipo = VACIO;
+            } else {
+                INSERCION.tipo = ERROR_TIPO;
+            }
         } else {
             //nein
             error("[ INCERCION ]: Para realizar INSERCION es necesario la siguiente sentencia insert into id ( COLUMNAS ) values ( EXPRESION ) "
