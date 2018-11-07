@@ -485,17 +485,15 @@ public class SintacticoSemantico {
 
         Atributos OPERANDO = new Atributos();
         Atributos EXPRARIT_P = new Atributos();
-        Atributos EXPRARIT = new Atributos();
+        Atributos EXPRARIT1 = new Atributos();
 
         if (preAnalisis.equals("num") || preAnalisis.equals("num.num") || preAnalisis.equals("idvar") || preAnalisis.equals("literal") || preAnalisis.equals("id")) {
             // EXPARIT-> EXPARIT EXPARIT'
             OPERANDO(OPERANDO);
             EXPRARIT_P(EXPRARIT_P);
 
-<<<<<<< HEAD
         } else if (preAnalisis.equals("(")) {
 
-=======
             if(OPERANDO.tipo.equals(VACIO) && EXPRARIT_P.tipo.equals(VACIO)){
                 EXPRARIT.tipo = VACIO;
             }
@@ -505,13 +503,12 @@ public class SintacticoSemantico {
         }
         else if (preAnalisis.equals("(")) {
             
->>>>>>> 0795baff07e7743ab4df68f95c11c11d7cb933a4
             emparejar("(");
-            EXPRARIT(EXPRARIT);
+            EXPRARIT(EXPRARIT1);
             emparejar(")");
             EXPRARIT_P(EXPRARIT_P);
 
-            if(EXPRARIT.tipo.equals(VACIO) && EXPRARIT_P.tipo.equals(VACIO)){
+            if(EXPRARIT1.tipo.equals(VACIO) && EXPRARIT_P.tipo.equals(VACIO)){
                 EXPRARIT.tipo = VACIO;
             }
             else{
