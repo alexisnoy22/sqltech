@@ -126,11 +126,11 @@ public class SintacticoSemantico {
             SENTENCIAS();
             emparejar("end");
 
-            if(DECLARACION.tipo.equals('VACIO') && SENTENCIAS.tipo.equals('VACIO')){
-                PROGRAMASQL.tipo = 'VACIO';
+            if(DECLARACION.tipo.equals(VACIO) && SENTENCIAS.tipo.equals(VACIO)){
+                PROGRAMASQL.tipo = VACIO;
             }
             else{
-                PROGRAMASQL.tipo = 'ERROR_TIPO';
+                PROGRAMASQL.tipo = ERROR_TIPO;
             }
 
         } else {
@@ -155,11 +155,11 @@ public class SintacticoSemantico {
             emparejar("where");
             EXPRCOND();
 
-            if(buscaTipo(id.entrada) && IGUALACION.tipo == 'VACIO' && EXPCOND.tipo == 'VACIO'){
-                ACTREGS.tipo = 'VACIO';
+            if(buscaTipo(id.entrada) && IGUALACION.tipo.equals(VACIO) && EXPCOND.tipo.equals(VACIO)){
+                ACTREGS.tipo = VACIO;
             }
             else{
-                ACTREGS.tipo = 'ERROR_TIPO';
+                ACTREGS.tipo = ERROR_TIPO;
             }
 
         } else {
@@ -180,11 +180,11 @@ public class SintacticoSemantico {
             emparejar("id");
             COLUMNAS_P();
 
-            if(buscaTipo(id.entrada) && COLUMNAS_P.tipo == 'VACIO'){
-                COLUMNAS.tipo = 'VACIO';
+            if(buscaTipo(id.entrada) && COLUMNAS_P.tipo.equals(VACIO)){
+                COLUMNAS.tipo = VACIO;
             }
             else{
-                COLUMNAS.tipo = 'ERROR_TIPO';
+                COLUMNAS.tipo = ERROR_TIPO;
             }
         } else {
             error("[COLUMNAS] Para definir una columna es necesario un "
@@ -204,11 +204,11 @@ public class SintacticoSemantico {
             emparejar(",");
             COLUMNAS();
 
-            if(COLUMNAS.tipo == 'VACIO'){
-                COLUMNAS_P.tipo = 'VACIO';
+            if(COLUMNAS.tipo.equals(VACIO)){
+                COLUMNAS_P.tipo = VACIO;
             }
             else{
-                COLUMNAS_P.tipo = 'ERROR_TIPO';
+                COLUMNAS_P.tipo = ERROR_TIPO;
             }
 
 
