@@ -144,7 +144,7 @@ public class SintacticoSemantico {
 
         Atributos IGUALACION = new Atributos();
         Atributos EXPCOND = new Atributos();
-        Atributos id = new Atributos();
+        Linea_BE id = new Linea_BE();
 
         if (preAnalisis.equals("update")) {
             emparejar("update");
