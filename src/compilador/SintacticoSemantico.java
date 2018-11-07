@@ -170,10 +170,22 @@ public class SintacticoSemantico {
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //Autor: Cabrales Coronado Heber - 13130684
 
-    private void COLUMNAS() {
+    private void COLUMNAS(Atributos COLUMNAS) {
+
+        Atributos COLUMNAS1 = new Atributos();
+        Atributos id = new Atributos;
+
         if (preAnalisis.equals("id")) {
+            id = cmp.be.preAnalisis;
             emparejar("id");
             COLUMNAS_P();
+
+            if(buscaTipo(id.entrada) && COLUMNAS_P.tipo == 'VACIO'){
+                COLUMNAS.tipo = 'VACIO';
+            }
+            else{
+                COLUMNAS.tipo = 'ERROR_TIPO';
+            }
         } else {
             error("[COLUMNAS] Para definir una columna es necesario un "
                     + "identificador " + "Linea " + cmp.be.preAnalisis.numLinea);
