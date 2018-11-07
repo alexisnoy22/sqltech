@@ -129,6 +129,9 @@ public class SintacticoSemantico {
             if(DECLARACION.tipo.equals('VACIO') && SENTENCIAS.tipo.equals('VACIO')){
                 PROGRAMASQL.tipo = 'VACIO';
             }
+            else{
+                PROGRAMASQL.tipo = 'ERROR_TIPO';
+            }
 
         } else {
             error("[PROGRAMASQL] inicio no correcto" + " Linea " + cmp.be.preAnalisis.numLinea);
@@ -137,14 +140,28 @@ public class SintacticoSemantico {
 
 //-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //Autor: Cabrales Coronado Heber - 13130684
-    private void ACTREGS() {
+    private void ACTREGS(Atributos ACTREGS) {
+
+        Atributos IGUALACION = new Atributos();
+        Atributos EXPCOND = new Atributos();
+        Atributos id = new Atributos();
+
         if (preAnalisis.equals("update")) {
             emparejar("update");
+            id = cmp.be.preAnalisis;
             emparejar("id");
             emparejar("set");
             IGUALACION();
             emparejar("where");
             EXPRCOND();
+
+            if(buscaTipo(id.entrada) && IGUALACION.tipo == 'VACIO' && EXPCOND.tipo == 'VACIO'){
+                ACTREGS.tipo = 'VACIO';
+            }
+            else{
+                ACTREGS.tipo = 'ERROR_TIPO';
+            }
+
         } else {
             error("[ACTREGS] El programa debe continuar con la sentencia update"
                     + " Linea " + cmp.be.preAnalisis.numLinea);
