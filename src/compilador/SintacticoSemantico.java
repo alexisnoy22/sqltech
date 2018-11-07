@@ -36,7 +36,6 @@ package compilador;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SintacticoSemantico {
 
@@ -439,11 +438,15 @@ public class SintacticoSemantico {
             EXPRARIT(EXPRARIT1);
             emparejar("oprel");
             EXPRARIT(EXPRARIT2);
-            if (tiposCompatibles(EXPRARIT1.tipo, EXPRARIT2.tipo)
-                    && !EXPRARIT1.tipo.equals(ERROR_TIPO) && !EXPRARIT2.tipo.equals(ERROR_TIPO)) {
-                EXPRREL.tipo = VACIO;
-            } else {
-                EXPRREL.tipo = ERROR_TIPO;
+            if (analizarSemantica) {
+                //Acción semántica
+                if (tiposCompatibles(EXPRARIT1.tipo, EXPRARIT2.tipo)
+                        && !EXPRARIT1.tipo.equals(ERROR_TIPO) && !EXPRARIT2.tipo.equals(ERROR_TIPO)) {
+                    EXPRREL.tipo = VACIO;
+                } else {
+                    EXPRREL.tipo = ERROR_TIPO;
+                }
+                //Fin acción semántica
             }
         } else {
             error("[EXPRREL]: Se esperaba la sentencia exprrel " + " No. Linea " + cmp.be.preAnalisis.numLinea);
@@ -460,15 +463,27 @@ public class SintacticoSemantico {
             //EXPRLOG-->and EXPRREL
             emparejar("and");
             EXPRREL(EXPRREL);
-            EXPRLOG.tipo = EXPRREL.tipo;
+            if (analizarSemantica) {
+                //Acción semántica
+                EXPRLOG.tipo = EXPRREL.tipo;
+                //Fin acción semántica
+            }
         } else if (preAnalisis.equals("or")) {
             //EXPRLOG-->or EXPRREL
             emparejar("or");
             EXPRREL(EXPRREL);
-            EXPRLOG.tipo = EXPRREL.tipo;
+            if (analizarSemantica) {
+                //Acción semántica
+                EXPRLOG.tipo = EXPRREL.tipo;
+                //Fin acción semántica
+            }
         } else {
             //EXPRLOG--> empty 
-            EXPRLOG.tipo = VACIO;
+            if (analizarSemantica) {
+                //Acción semántica
+                EXPRLOG.tipo = VACIO;
+                //Fin acción semántica
+            }
         }
     }
 
@@ -485,10 +500,14 @@ public class SintacticoSemantico {
             emparejar("table");
             id = cmp.be.preAnalisis;
             emparejar("id");
-            if (buscaTipo(id.entrada).equals("tabla")) {
-                ELIMTAB.tipo = VACIO;
-            } else {
-                ELIMTAB.tipo = ERROR_TIPO;
+            if (analizarSemantica) {
+                //Acción semántica
+                if (buscaTipo(id.entrada).equals("tabla")) {
+                    ELIMTAB.tipo = VACIO;
+                } else {
+                    ELIMTAB.tipo = ERROR_TIPO;
+                }
+                //Fin acción semántica
             }
         } else {
             error("[ELIMTAB]: Se esperaba la sentencia elimtab " + " No. Linea " + cmp.be.preAnalisis.numLinea);
@@ -511,11 +530,15 @@ public class SintacticoSemantico {
             SENTENCIAS(SENTENCIAS);
             emparejar("end");
             IFELSE_P(IFELSE_P);
-            if (EXPRCOND.tipo.equals("boolean") && SENTENCIAS.tipo.equals(VACIO)
-                    && IFELSE_P.tipo.equals(VACIO)) {
-                IFELSE.tipo = VACIO;
-            } else {
-                IFELSE.tipo = ERROR_TIPO;
+            if (analizarSemantica) {
+                //Acción semántica
+                if (EXPRCOND.tipo.equals("boolean") && SENTENCIAS.tipo.equals(VACIO)
+                        && IFELSE_P.tipo.equals(VACIO)) {
+                    IFELSE.tipo = VACIO;
+                } else {
+                    IFELSE.tipo = ERROR_TIPO;
+                }
+                //Fin acción semántica
             }
         } else {
             error("[IFELSE]: SE ESPERABA UNA SENTENCIA DEL TIPO IF-ELSE " + "No. Línea: " + cmp.be.preAnalisis.numLinea);
@@ -532,10 +555,18 @@ public class SintacticoSemantico {
             emparejar("begin");
             SENTENCIAS(SENTENCIAS);
             emparejar("end");
-            IFELSE_P.tipo = SENTENCIAS.tipo;
+            if (analizarSemantica) {
+                //Acción semántica
+                IFELSE_P.tipo = SENTENCIAS.tipo;
+                //Fin acción semántica
+            }
         } else {
             //IFELSE_P produce empty
-            IFELSE_P.tipo = VACIO;
+            if (analizarSemantica) {
+                //Acción semántica
+                IFELSE_P.tipo = VACIO;
+                //Fin acción semántica
+            }
         }
     }
 
@@ -551,11 +582,15 @@ public class SintacticoSemantico {
             emparejar("opasig");
             EXPRARIT(EXPRARIT);
             IGUALACIONP(IGUALACIONP);
-            if (tiposCompatibles(buscaTipo(id.entrada), EXPRARIT.tipo)
-                    && IGUALACIONP.tipo.equals(VACIO)) {
-                IGUALACION.tipo = VACIO;
-            } else {
-                IGUALACION.tipo = ERROR_TIPO;
+            if (analizarSemantica) {
+                //Acción semántica
+                if (tiposCompatibles(buscaTipo(id.entrada), EXPRARIT.tipo)
+                        && IGUALACIONP.tipo.equals(VACIO)) {
+                    IGUALACION.tipo = VACIO;
+                } else {
+                    IGUALACION.tipo = ERROR_TIPO;
+                }
+                //Fin acción semántica
             }
         } else {
             error("[IGUALACION]: SE ESPERABA UNA SENTENCIA DE IGUALACIÓN " + "No. Línea: " + cmp.be.preAnalisis.numLinea);
@@ -570,10 +605,18 @@ public class SintacticoSemantico {
         if (preAnalisis.equals(",")) {//IGUALACIONP -> { , IGUALACION }
             emparejar(",");
             IGUALACION(IGUALACION);
-            IGUALACIONP.tipo = IGUALACION.tipo;
+            if (analizarSemantica) {
+                //Acción semántica
+                IGUALACIONP.tipo = IGUALACION.tipo;
+                //Fin acción semántica
+            }
         } else {
             //IGUALACIONP -> empty
-            IGUALACIONP.tipo = VACIO;
+            if (analizarSemantica) {
+                //Acción semántica
+                IGUALACIONP.tipo = VACIO;
+                //Fin acción semántica
+            }
         }
     }
 
@@ -596,11 +639,15 @@ public class SintacticoSemantico {
             emparejar("(");
             EXPRESIONES(EXPRESIONES);
             emparejar(")");
-            if (checarArchivo(id.lexema + ".db") && COLUMNAS.tipo.equals(VACIO)
-                    && EXPRESIONES.tipo.equals(VACIO)) {
-                INSERCION.tipo = VACIO;
-            } else {
-                INSERCION.tipo = ERROR_TIPO;
+            if (analizarSemantica) {
+                //Acción semántica
+                if (checarArchivo(id.lexema + ".db") && COLUMNAS.tipo.equals(VACIO)
+                        && EXPRESIONES.tipo.equals(VACIO)) {
+                    INSERCION.tipo = VACIO;
+                } else {
+                    INSERCION.tipo = ERROR_TIPO;
+                }
+                //Fin acción semántica
             }
         } else {
             //nein
@@ -611,14 +658,22 @@ public class SintacticoSemantico {
 
     private void LISTAIDS(Atributos LISTAIDS1) { //Yair Emmanuel Mireles Ortiz 14130078
         Atributos LISTAIDS2 = new Atributos();
-        
+
         if (preAnalisis.equals(",")) {//LISTAIDS -> { , id LISTAIDS}
             emparejar(",");
             emparejar("id");
             LISTAIDS(LISTAIDS2);
-            LISTAIDS1.tipo = LISTAIDS2.tipo;
+            if (analizarSemantica) {
+                //Acción semántica
+                LISTAIDS1.tipo = LISTAIDS2.tipo;
+                //Fin acción semántica
+            }
         } else {
-            LISTAIDS1.tipo = VACIO;
+            if (analizarSemantica) {
+                //Acción semántica
+                LISTAIDS1.tipo = VACIO;
+                //Fin acción semántica
+            }
         }
     }
 
@@ -630,15 +685,27 @@ public class SintacticoSemantico {
         if (preAnalisis.equals("null")) {
             //NULO -> null
             emparejar("null");
-            NULO.tipo = VACIO;
+            if (analizarSemantica) {
+                //Acción semántica
+                NULO.tipo = VACIO;
+                //Fin acción semántica
+            }
         } else if (preAnalisis.equals("not")) {
             //NULO ->not null
             emparejar("not");
             emparejar("null");
-            NULO.tipo = VACIO;
+            if (analizarSemantica) {
+                //Acción semántica
+                NULO.tipo = VACIO;
+                //Fin acción semántica
+            }
         } else {
             //NULO ->empty
-            NULO.tipo = VACIO;
+            if (analizarSemantica) {
+                //Acción semántica
+                NULO.tipo = VACIO;
+                //Fin acción semántica
+            }
         }
     }
 
@@ -649,30 +716,50 @@ public class SintacticoSemantico {
         Linea_BE idvar = new Linea_BE();
         Linea_BE literal = new Linea_BE();
         Linea_BE id = new Linea_BE();
-        
+
         if (preAnalisis.equals("num")) {
             //OPERANDO -> num
             emparejar("num");
-            OPERANDO.tipo = "integer";
+            if (analizarSemantica) {
+                //Acción semántica
+                OPERANDO.tipo = "integer";
+                //Fin acción semántica
+            }
         } else if (preAnalisis.equals("num.num")) {
             //operando -> num.num
             emparejar("num.num");
-            OPERANDO.tipo = "real";
+            if (analizarSemantica) {
+                //Acción semántica
+                OPERANDO.tipo = "real";
+                //Fin acción semántica
+            }
         } else if (preAnalisis.equals("idvar")) {
             //operando -> invar
             idvar = cmp.be.preAnalisis;
             emparejar("idvar");
-            OPERANDO.tipo = buscaTipo(idvar.entrada);
+            if (analizarSemantica) {
+                //Acción semántica
+                OPERANDO.tipo = buscaTipo(idvar.entrada);
+                //Fin acción semántica
+            }
         } else if (preAnalisis.equals("literal")) {
             //operando -> literal 
             literal = cmp.be.preAnalisis;
             emparejar("literal");
-            OPERANDO.tipo = "char(" + literal.lexema.length() + ")";
+            if (analizarSemantica) {
+                //Acción semántica
+                OPERANDO.tipo = "char(" + literal.lexema.length() + ")";
+                //Fin acción semántica
+            }
         } else if (preAnalisis.equals("id")) {
             //operando -> id
             id = cmp.be.preAnalisis;
             emparejar("id");
-            OPERANDO.tipo = buscaTipo(id.entrada);
+            if (analizarSemantica) {
+                //Acción semántica
+                OPERANDO.tipo = buscaTipo(id.entrada);
+                //Fin acción semántica
+            }
         } else {
             error("[OPERANDO]: Se esperaba \"num | mun.num | invar | literal| id \" en linea " + cmp.be.preAnalisis.numLinea);
         }
@@ -685,7 +772,7 @@ public class SintacticoSemantico {
     private void SENTENCIAS(Atributos SENTENCIAS1) {
         Atributos SENTENCIA = new Atributos();
         Atributos SENTENCIAS2 = new Atributos();
-        
+
         if (preAnalisis.equals("if")
                 || preAnalisis.equals("while")
                 || preAnalisis.equals("print")
@@ -700,14 +787,22 @@ public class SintacticoSemantico {
             //sentencias -> sentencia sentencias 
             SENTENCIA(SENTENCIA);
             SENTENCIAS(SENTENCIAS);
-            if(SENTENCIA.tipo.equals(VACIO) && SENTENCIAS2.tipo.equals(VACIO)){
-                SENTENCIAS1.tipo = VACIO;
-            }else{
-                SENTENCIAS1.tipo = ERROR_TIPO;
+            if (analizarSemantica) {
+                //Acción semántica
+                if (SENTENCIA.tipo.equals(VACIO) && SENTENCIAS2.tipo.equals(VACIO)) {
+                    SENTENCIAS1.tipo = VACIO;
+                } else {
+                    SENTENCIAS1.tipo = ERROR_TIPO;
+                }
+                //Fin acción semántica
             }
         } else {
             //sentencias -> empty
-            SENTENCIAS1.tipo = VACIO;
+            if (analizarSemantica) {
+                //Acción semántica
+                SENTENCIAS1.tipo = VACIO;
+                //Fin acción semántica
+            }
         }
     }
 
