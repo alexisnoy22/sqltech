@@ -36,6 +36,7 @@ package compilador;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SintacticoSemantico {
 
@@ -608,14 +609,16 @@ public class SintacticoSemantico {
         }
     }
 
-    private void LISTAIDS() { //Yair Emmanuel Mireles Ortiz 14130078
+    private void LISTAIDS(Atributos LISTAIDS1) { //Yair Emmanuel Mireles Ortiz 14130078
+        Atributos LISTAIDS2 = new Atributos();
+        
         if (preAnalisis.equals(",")) {//LISTAIDS -> { , id LISTAIDS}
             emparejar(",");
             emparejar("id");
-            LISTAIDS();
+            LISTAIDS(LISTAIDS2);
+            LISTAIDS1.tipo = LISTAIDS2.tipo;
         } else {
-            error("[ LISTAIDS ]: Para realizar INSERCION es necesario iniciar con una coma (,) "
-                    + "No.Linea" + cmp.be.preAnalisis.numLinea);
+            LISTAIDS1.tipo = VACIO;
         }
     }
 
@@ -623,38 +626,53 @@ public class SintacticoSemantico {
     //----------------------------------------------------
     //MONTES QUIROZ SABINO RUBEN    15130056
     //primeros de NUL(null,not,empty) 
-    private void NULO() {
+    private void NULO(Atributos NULO) {
         if (preAnalisis.equals("null")) {
             //NULO -> null
             emparejar("null");
+            NULO.tipo = VACIO;
         } else if (preAnalisis.equals("not")) {
             //NULO ->not null
             emparejar("not");
             emparejar("null");
+            NULO.tipo = VACIO;
         } else {
             //NULO ->empty
+            NULO.tipo = VACIO;
         }
     }
 
     //----------------------------------------------------
     //MONTES QUIROZ SABINO RUBEN    15130056
     //primeros de OPERANDO(num,num.num,idvar,literal,id)
-    private void OPERANDO() {
+    private void OPERANDO(Atributos OPERANDO) {
+        Linea_BE idvar = new Linea_BE();
+        Linea_BE literal = new Linea_BE();
+        Linea_BE id = new Linea_BE();
+        
         if (preAnalisis.equals("num")) {
             //OPERANDO -> num
             emparejar("num");
+            OPERANDO.tipo = "integer";
         } else if (preAnalisis.equals("num.num")) {
             //operando -> num.num
             emparejar("num.num");
+            OPERANDO.tipo = "real";
         } else if (preAnalisis.equals("idvar")) {
             //operando -> invar
+            idvar = cmp.be.preAnalisis;
             emparejar("idvar");
+            OPERANDO.tipo = buscaTipo(idvar.entrada);
         } else if (preAnalisis.equals("literal")) {
             //operando -> literal 
+            literal = cmp.be.preAnalisis;
             emparejar("literal");
+            OPERANDO.tipo = "char(" + literal.lexema.length() + ")";
         } else if (preAnalisis.equals("id")) {
             //operando -> id
+            id = cmp.be.preAnalisis;
             emparejar("id");
+            OPERANDO.tipo = buscaTipo(id.entrada);
         } else {
             error("[OPERANDO]: Se esperaba \"num | mun.num | invar | literal| id \" en linea " + cmp.be.preAnalisis.numLinea);
         }
@@ -664,7 +682,10 @@ public class SintacticoSemantico {
     //----------------------------------------------------
     //MONTES QUIROZ SABINO RUBEN    15130056
     //primeros de SENTENCEA(sentencia(), empty)
-    private void SENTENCIAS() {
+    private void SENTENCIAS(Atributos SENTENCIAS1) {
+        Atributos SENTENCIA = new Atributos();
+        Atributos SENTENCIAS2 = new Atributos();
+        
         if (preAnalisis.equals("if")
                 || preAnalisis.equals("while")
                 || preAnalisis.equals("print")
@@ -677,11 +698,16 @@ public class SintacticoSemantico {
                 || preAnalisis.equals("drop")
                 || preAnalisis.equals("case")) {
             //sentencias -> sentencia sentencias 
-            SENTENCIA();
-            SENTENCIAS();
+            SENTENCIA(SENTENCIA);
+            SENTENCIAS(SENTENCIAS);
+            if(SENTENCIA.tipo.equals(VACIO) && SENTENCIAS2.tipo.equals(VACIO)){
+                SENTENCIAS1.tipo = VACIO;
+            }else{
+                SENTENCIAS1.tipo = ERROR_TIPO;
+            }
         } else {
             //sentencias -> empty
-
+            SENTENCIAS1.tipo = VACIO;
         }
     }
 
