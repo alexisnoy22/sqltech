@@ -285,14 +285,14 @@ public class SintacticoSemantico {
             emparejar("set");
             IGUALACION(IGUALACION);
 
-            if(checarArchivo(id.lexema || ".db")){
+            if(checarArchivo(id.lexema + ".db")){
                 EXPCOND.ambito = id.lexema;
             }
 
             emparejar("where");
             EXPRCOND(EXPCOND);
 
-            if(buscaTipo(id.entrada) && IGUALACION.tipo.equals(VACIO) && EXPCOND.tipo.equals(VACIO)){
+            if(buscaTipo(id.entrada).equals("tablas") && IGUALACION.tipo.equals(VACIO) && EXPCOND.tipo.equals(VACIO)){
                 ACTREGS.tipo = VACIO;
             }
             else{
@@ -310,14 +310,14 @@ public class SintacticoSemantico {
     private void COLUMNAS(Atributos COLUMNAS) {
 
         Atributos COLUMNAS_P = new Atributos();
-        Atributos id = new Atributos;
+        Linea_BE id = new Linea_BE();
 
         if (preAnalisis.equals("id")) {
             id = cmp.be.preAnalisis;
             emparejar("id");
             COLUMNAS_P(COLUMNAS_P);
 
-            if(buscaTipo(id.entrada) && COLUMNAS_P.tipo.equals(VACIO)){
+            if(buscaTipo(id.entrada).equals("tablas") && COLUMNAS_P.tipo.equals(VACIO)){
                 COLUMNAS.tipo = VACIO;
             }
             else{
