@@ -46,7 +46,19 @@ public class SintacticoSemantico {
     public static final String ERROR_TIPO = "error_tipo";
 
     public boolean tiposCompatibles(String tipo1, String tipo2) {
-        return false;
+        if (tipo1.equals("integer") && tipo2.equals("integer")) {
+            return true;
+        } else if (tipo1.equals("float") && tipo2.equals("float")) {
+            return true;
+        } else if ((tipo1.equals("integer") && tipo2.equals("float"))
+                || (tipo1.equals("float") && tipo2.equals("integer"))) {
+            return true;
+        } else if (tipo1.substring(0, 3).equals("char")
+                && tipo2.substring(0, 3).equals("char")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public String buscaTipo(int entrada) {
@@ -188,7 +200,8 @@ public class SintacticoSemantico {
         preAnalisis = cmp.be.preAnalisis.complex;
 
         // * * *   INVOCAR AQUI EL PROCEDURE DEL SIMBOLO INICIAL   * * *
-        PROGRAMASQL();
+        Atributos PROGRAMASQL = new Atributos();
+        PROGRAMASQL(PROGRAMASQL);
     }
 
     //--------------------------------------------------------------------------
@@ -258,11 +271,12 @@ public class SintacticoSemantico {
             SENTENCIAS(SENTENCIAS);
             emparejar("end");
 
-            if(DECLARACION.tipo.equals(VACIO) && SENTENCIAS.tipo.equals(VACIO)){
-                PROGRAMASQL.tipo = VACIO;
-            }
-            else{
-                PROGRAMASQL.tipo = ERROR_TIPO;
+            if (analizarSemantica) {
+                if (DECLARACION.tipo.equals(VACIO) && SENTENCIAS.tipo.equals(VACIO)) {
+                    PROGRAMASQL.tipo = VACIO;
+                } else {
+                    PROGRAMASQL.tipo = ERROR_TIPO;
+                }
             }
 
         } else {
@@ -280,23 +294,27 @@ public class SintacticoSemantico {
 
         if (preAnalisis.equals("update")) {
             emparejar("update");
-            id = cmp.be.preAnalisis;
+            if (analizarSemantica) {
+                id = cmp.be.preAnalisis;
+            }
             emparejar("id");
             emparejar("set");
             IGUALACION(IGUALACION);
 
-            if(checarArchivo(id.lexema + ".db")){
-                EXPCOND.ambito = id.lexema;
+            if (analizarSemantica) {
+                if (checarArchivo(id.lexema + ".db")) {
+                    EXPCOND.ambito = id.lexema;
+                }
             }
 
             emparejar("where");
             EXPRCOND(EXPCOND);
-
-            if(buscaTipo(id.entrada).equals("tablas") && IGUALACION.tipo.equals(VACIO) && EXPCOND.tipo.equals(VACIO)){
-                ACTREGS.tipo = VACIO;
-            }
-            else{
-                ACTREGS.tipo = ERROR_TIPO;
+            if (analizarSemantica) {
+                if (buscaTipo(id.entrada).equals("tablas") && IGUALACION.tipo.equals(VACIO) && EXPCOND.tipo.equals(VACIO)) {
+                    ACTREGS.tipo = VACIO;
+                } else {
+                    ACTREGS.tipo = ERROR_TIPO;
+                }
             }
 
         } else {
@@ -313,15 +331,18 @@ public class SintacticoSemantico {
         Linea_BE id = new Linea_BE();
 
         if (preAnalisis.equals("id")) {
-            id = cmp.be.preAnalisis;
+            if (analizarSemantica) {
+                id = cmp.be.preAnalisis;
+            }
             emparejar("id");
             COLUMNAS_P(COLUMNAS_P);
 
-            if(buscaTipo(id.entrada).equals("tablas") && COLUMNAS_P.tipo.equals(VACIO)){
-                COLUMNAS.tipo = VACIO;
-            }
-            else{
-                COLUMNAS.tipo = ERROR_TIPO;
+            if (analizarSemantica) {
+                if (buscaTipo(id.entrada).equals("tablas") && COLUMNAS_P.tipo.equals(VACIO)) {
+                    COLUMNAS.tipo = VACIO;
+                } else {
+                    COLUMNAS.tipo = ERROR_TIPO;
+                }
             }
         } else {
             error("[COLUMNAS] Para definir una columna es necesario un "
@@ -341,16 +362,19 @@ public class SintacticoSemantico {
             emparejar(",");
             COLUMNAS(COLUMNAS);
 
-            if(COLUMNAS.tipo.equals(VACIO)){
-                COLUMNAS_P.tipo = VACIO;
+            if (analizarSemantica) {
+                if (COLUMNAS.tipo.equals(VACIO)) {
+                    COLUMNAS_P.tipo = VACIO;
+                } else {
+                    COLUMNAS_P.tipo = ERROR_TIPO;
+                }
             }
-            else{
-                COLUMNAS_P.tipo = ERROR_TIPO;
-            }
-
 
         } else {
             //COLUMNAS_P -> empty
+            if (analizarSemantica) {
+                COLUMNAS_P.tipo = VACIO;
+            }
         }
     }
 
@@ -360,15 +384,31 @@ public class SintacticoSemantico {
     private void DECLARACION(Atributos DECLARACION) {
 
         Atributos TIPO = new Atributos();
+        Atributos DECLARACION1 = new Atributos();
+        Linea_BE idvar = new Linea_BE();
 
         if (preAnalisis.equals("declare")) {
-            //DECLARACION -> declare idvar TIPO DECLARACION
+            //DECLARACION -> declare idvar TIPO DECLARACION1
             emparejar("declare");
+            if (analizarSemantica) {
+                idvar = cmp.be.preAnalisis;
+            }
             emparejar("idvar");
             TIPO(TIPO);
-            DECLARACION(DECLARACION);
+            DECLARACION(DECLARACION1);
+            if (analizarSemantica) {
+                if (DECLARACION1.tipo.equals(VACIO) && !TIPO.equals(ERROR_TIPO)
+                        && cmp.ts.buscar(idvar.lexema) == 0) {
+                    DECLARACION.tipo = VACIO;
+                } else {
+                    DECLARACION.tipo = ERROR_TIPO;
+                }
+            }
         } else {
             //DECLARACION -> empty
+            if (analizarSemantica) {
+                DECLARACION.tipo = VACIO;
+            }
         }
     }
 
@@ -384,11 +424,12 @@ public class SintacticoSemantico {
             emparejar("print");
             EXPRARIT(EXPRARIT);
 
-            if(EXPRARIT.tipo.equals(VACIO)){
-                DESPLIEGUE.tipo = VACIO;
-            }
-            else{
-                DESPLIEGUE.tipo = ERROR_TIPO;
+            if (analizarSemantica) {
+                if (EXPRARIT.tipo.equals(VACIO)) {
+                    DESPLIEGUE.tipo = VACIO;
+                } else {
+                    DESPLIEGUE.tipo = ERROR_TIPO;
+                }
             }
 
         } else {
@@ -408,21 +449,25 @@ public class SintacticoSemantico {
         Atributos EXPCOND = new Atributos();
         Linea_BE id = new Linea_BE();
 
-
         if (preAnalisis.equals("delete")) {
             // DELREG -> delete from id where EXPRCOND
             emparejar("delete");
             emparejar("from");
-            id = cmp.be.preAnalisis;
+            if (analizarSemantica) {
+                id = cmp.be.preAnalisis;
+            }
             emparejar("id");
             emparejar("where");
-            EXPCOND.ambito = id.lexema;
-            EXPRCOND(EXPCOND);
-            if(buscaTipo(id.entrada).equals("tabla") && EXPCOND.tipo.equals("boolean")){
-                DELREG.tipo = VACIO;
+            if (analizarSemantica) {
+                EXPCOND.ambito = id.lexema;
             }
-            else{
-                DELREG.tipo = ERROR_TIPO;
+            EXPRCOND(EXPCOND);
+            if (analizarSemantica) {
+                if (buscaTipo(id.entrada).equals("tabla") && EXPCOND.tipo.equals("boolean")) {
+                    DELREG.tipo = VACIO;
+                } else {
+                    DELREG.tipo = ERROR_TIPO;
+                }
             }
 
         } else {
@@ -445,11 +490,12 @@ public class SintacticoSemantico {
             EXPRARIT(EXPRARIT);
             EXPRESIONES_P(EXPRESIONES_P);
 
-            if(EXPRARIT.tipo.equals(VACIO) && EXPRESIONES_P.tipo.equals(VACIO)){
-                EXPRESIONES.tipo = VACIO;
-            }
-            else{
-                EXPRESIONES.tipo = ERROR_TIPO;
+            if (analizarSemantica) {
+                if (EXPRARIT.tipo.equals(VACIO) && EXPRESIONES_P.tipo.equals(VACIO)) {
+                    EXPRESIONES.tipo = VACIO;
+                } else {
+                    EXPRESIONES.tipo = ERROR_TIPO;
+                }
             }
 
         } else {
@@ -467,14 +513,16 @@ public class SintacticoSemantico {
             emparejar(",");
             EXPRESIONES(EXPRESIONES);
 
-            if(EXPRESIONES.tipo.equals(VACIO)){
-                EXPRESIONES_P.tipo = VACIO;
-            }
-            else{
-                EXPRESIONES_P.tipo = ERROR_TIPO;
+            if (analizarSemantica) {
+                if (EXPRESIONES.tipo.equals(VACIO)) {
+                    EXPRESIONES_P.tipo = VACIO;
+                } else {
+                    EXPRESIONES_P.tipo = ERROR_TIPO;
+                }
             }
         } else {
             //EXPRESIONES_P-> empty
+            EXPRESIONES_P.tipo = VACIO;
         }
     }
     //-----------------------------------
@@ -488,31 +536,29 @@ public class SintacticoSemantico {
         Atributos EXPRARIT1 = new Atributos();
 
         if (preAnalisis.equals("num") || preAnalisis.equals("num.num") || preAnalisis.equals("idvar") || preAnalisis.equals("literal") || preAnalisis.equals("id")) {
-            // EXPARIT-> EXPARIT EXPARIT'
+            // EXPARIT-> OPERANDO EXPARIT'
             OPERANDO(OPERANDO);
             EXPRARIT_P(EXPRARIT_P);
-
+            if (analizarSemantica) {
+                if (!OPERANDO.tipo.equals(ERROR_TIPO) && EXPRARIT_P.tipo.equals(VACIO)) {
+                    EXPRARIT.tipo = VACIO;
+                } else {
+                    EXPRARIT.tipo = ERROR_TIPO;
+                }
+            }
         } else if (preAnalisis.equals("(")) {
 
-            if(OPERANDO.tipo.equals(VACIO) && EXPRARIT_P.tipo.equals(VACIO)){
-                EXPRARIT.tipo = VACIO;
-            }
-            else{
-                EXPRARIT.tipo = ERROR_TIPO;
-            }
-        }
-        else if (preAnalisis.equals("(")) {
-            
             emparejar("(");
             EXPRARIT(EXPRARIT1);
             emparejar(")");
             EXPRARIT_P(EXPRARIT_P);
 
-            if(EXPRARIT1.tipo.equals(VACIO) && EXPRARIT_P.tipo.equals(VACIO)){
-                EXPRARIT.tipo = VACIO;
-            }
-            else{
-                EXPRARIT.tipo = ERROR_TIPO;
+            if (analizarSemantica) {
+                if (EXPRARIT1.tipo.equals(VACIO) && EXPRARIT_P.tipo.equals(VACIO)) {
+                    EXPRARIT.tipo = VACIO;
+                } else {
+                    EXPRARIT.tipo = ERROR_TIPO;
+                }
             }
         } else {
             error("[EXPARIT]: inicio no correcto " + "linea" + cmp.be.preAnalisis.numLinea);
@@ -529,27 +575,31 @@ public class SintacticoSemantico {
             //EXPARIT_P -> opmult
             emparejar("opsuma");
             EXPRARIT(EXPRARIT);
-            if(EXPRARIT.tipo.equals(VACIO)){
-                EXPRARIT_P.tipo = VACIO;
+            if (analizarSemantica) {
+                if (EXPRARIT.tipo.equals(VACIO)) {
+                    EXPRARIT_P.tipo = VACIO;
+                } else {
+                    EXPRARIT_P.tipo = ERROR_TIPO;
+                }
             }
-            else{
-                EXPRARIT_P.tipo = ERROR_TIPO;
-            }
-
         } else {
             if (preAnalisis.equals("opmult")) {
                 //EXPERIT_P -> opmult
                 emparejar("opmult");
                 EXPRARIT(EXPRARIT);
 
-                if(EXPRARIT.tipo.equals(VACIO)){
-                    EXPRARIT_P.tipo = VACIO;
-                }
-                else{
-                    EXPRARIT_P.tipo = ERROR_TIPO;
+                if (analizarSemantica) {
+                    if (EXPRARIT.tipo.equals(VACIO)) {
+                        EXPRARIT_P.tipo = VACIO;
+                    } else {
+                        EXPRARIT_P.tipo = ERROR_TIPO;
+                    }
                 }
             } else {
                 // EXPARIT_P -> empty
+                if (analizarSemantica) {
+                    EXPRARIT_P.tipo = VACIO;
+                }
             }
         }
     }
@@ -566,11 +616,12 @@ public class SintacticoSemantico {
             EXPRREL(EXPRREL);
             EXPRLOG(EXPRLOG);
 
-            if(EXPRREL.tipo.equals(VACIO) && EXPRLOG.tipo.equals(VACIO)){
-                EXPRCOND.tipo = VACIO;
-            }
-            else{
-                EXPRCOND.tipo = ERROR_TIPO;
+            if (analizarSemantica) {
+                if (EXPRREL.tipo.equals(VACIO) && EXPRLOG.tipo.equals(VACIO)) {
+                    EXPRCOND.tipo = VACIO;
+                } else {
+                    EXPRCOND.tipo = ERROR_TIPO;
+                }
             }
         } else {
             error("[EXPRCOND]: inicio no correcto " + "linea" + cmp.be.preAnalisis.numLinea);
@@ -583,7 +634,7 @@ public class SintacticoSemantico {
 //******************************************************** 
 
     private void EXPRREL(Atributos EXPRREL) {
-        
+
         Atributos EXPRARIT1 = new Atributos();
         Atributos EXPRARIT2 = new Atributos();
 
@@ -963,10 +1014,10 @@ public class SintacticoSemantico {
     //---------------
     //Autor: Alexis Enrique Noyola Saenz - 14131193
     private void SELECTIVA(Atributos SELECTIVA) {
-        
+
         Atributos SELWHEN = new Atributos();
         Atributos SELELSE = new Atributos();
-        
+
         if (preAnalisis.equals("case")) {
             //SELECTIVA -> case SELWHEN SELELSE end 
             emparejar("case");
@@ -975,7 +1026,7 @@ public class SintacticoSemantico {
             emparejar("end");
             if (analizarSemantica) {
                 //Acción semántica
-                if(SELWHEN.tipo.equals(VACIO) && SELELSE.tipo.equals(VACIO)) {
+                if (SELWHEN.tipo.equals(VACIO) && SELELSE.tipo.equals(VACIO)) {
                     SELECTIVA.tipo = VACIO;
                 } else {
                     SELECTIVA.tipo = ERROR_TIPO;
@@ -988,11 +1039,11 @@ public class SintacticoSemantico {
     }
 
     private void SELWHEN(Atributos SELWHEN) {
-        
+
         Atributos EXPRCOND = new Atributos();
         Atributos SENTENCIA = new Atributos();
         Atributos SELWHEN_P = new Atributos();
-        
+
         if (preAnalisis.equals("when")) {
             //SELWHEN -> when EXPRCOND then SENTENCIA SELWHEN'
             emparejar("when");
@@ -1002,7 +1053,7 @@ public class SintacticoSemantico {
             SELWHEN_P(SELWHEN_P);
             if (analizarSemantica) {
                 //Acción semántica
-                if(EXPRCOND.tipo.equals("booleano") && SENTENCIA.tipo.equals(VACIO) && SELWHEN_P.tipo.equals(VACIO)) {
+                if (EXPRCOND.tipo.equals("booleano") && SENTENCIA.tipo.equals(VACIO) && SELWHEN_P.tipo.equals(VACIO)) {
                     SELWHEN.tipo = VACIO;
                 } else {
                     SELWHEN.tipo = ERROR_TIPO;
@@ -1021,7 +1072,7 @@ public class SintacticoSemantico {
             IFELSE(IFELSE);
             if (analizarSemantica) {
                 //Acción semántica
-                if(IFELSE.tipo.equals(VACIO)) {
+                if (IFELSE.tipo.equals(VACIO)) {
                     SENTENCIA.tipo = VACIO;
                 } else {
                     SENTENCIA.tipo = ERROR_TIPO;
@@ -1034,7 +1085,7 @@ public class SintacticoSemantico {
             SENREP(SENREP);
             if (analizarSemantica) {
                 //Acción semántica
-                if(SENREP.tipo.equals(VACIO)) {
+                if (SENREP.tipo.equals(VACIO)) {
                     SENTENCIA.tipo = VACIO;
                 } else {
                     SENTENCIA.tipo = ERROR_TIPO;
@@ -1047,7 +1098,7 @@ public class SintacticoSemantico {
             DESPLIEGUE(DESPLIEGUE);
             if (analizarSemantica) {
                 //Acción semántica
-                if(DESPLIEGUE.equals(VACIO)) {
+                if (DESPLIEGUE.equals(VACIO)) {
                     SENTENCIA.tipo = VACIO;
                 } else {
                     SENTENCIA.tipo = ERROR_TIPO;
@@ -1060,7 +1111,7 @@ public class SintacticoSemantico {
             SENTASIG(SENTASIG);
             if (analizarSemantica) {
                 //Acción semántica
-                if(SENTASIG.tipo.equals(VACIO)) {
+                if (SENTASIG.tipo.equals(VACIO)) {
                     SENTENCIA.tipo = VACIO;
                 } else {
                     SENTENCIA.tipo = ERROR_TIPO;
@@ -1073,7 +1124,7 @@ public class SintacticoSemantico {
             SENTSELECT(SENTSELECT);
             if (analizarSemantica) {
                 //Acción semántica
-                if(SENTSELECT.tipo.equals(VACIO)) {
+                if (SENTSELECT.tipo.equals(VACIO)) {
                     SENTENCIA.tipo = VACIO;
                 } else {
                     SENTENCIA.tipo = ERROR_TIPO;
@@ -1086,7 +1137,7 @@ public class SintacticoSemantico {
             DELREG(DELREG);
             if (analizarSemantica) {
                 //Acción semántica
-                if(DELREG.tipo.equals(VACIO)) {
+                if (DELREG.tipo.equals(VACIO)) {
                     SENTENCIA.tipo = VACIO;
                 } else {
                     SENTENCIA.tipo = ERROR_TIPO;
@@ -1099,7 +1150,7 @@ public class SintacticoSemantico {
             INSERCION(INSERCION);
             if (analizarSemantica) {
                 //Acción semántica
-                if(INSERCION.tipo.equals(VACIO)) {
+                if (INSERCION.tipo.equals(VACIO)) {
                     SENTENCIA.tipo = VACIO;
                 } else {
                     SENTENCIA.tipo = ERROR_TIPO;
@@ -1112,7 +1163,7 @@ public class SintacticoSemantico {
             ACTREGS(ACTREGS);
             if (analizarSemantica) {
                 //Acción semántica
-                if(ACTREGS.tipo.equals(VACIO)) {
+                if (ACTREGS.tipo.equals(VACIO)) {
                     SENTENCIA.tipo = VACIO;
                 } else {
                     SENTENCIA.tipo = ERROR_TIPO;
@@ -1125,7 +1176,7 @@ public class SintacticoSemantico {
             TABLA(TABLA);
             if (analizarSemantica) {
                 //Acción semántica
-                if(TABLA.tipo.equals(VACIO)) {
+                if (TABLA.tipo.equals(VACIO)) {
                     SENTENCIA.tipo = VACIO;
                 } else {
                     SENTENCIA.tipo = ERROR_TIPO;
@@ -1138,7 +1189,7 @@ public class SintacticoSemantico {
             ELIMTAB(ELIMTAB);
             if (analizarSemantica) {
                 //Acción semántica
-                if(ELIMTAB.tipo.equals(VACIO)) {
+                if (ELIMTAB.tipo.equals(VACIO)) {
                     SENTENCIA.tipo = VACIO;
                 } else {
                     SENTENCIA.tipo = ERROR_TIPO;
@@ -1151,7 +1202,7 @@ public class SintacticoSemantico {
             SELECTIVA(SELECTIVA);
             if (analizarSemantica) {
                 //Acción semántica
-                if(SELECTIVA.tipo.equals(VACIO)) {
+                if (SELECTIVA.tipo.equals(VACIO)) {
                     SENTENCIA.tipo = VACIO;
                 } else {
                     SENTENCIA.tipo = ERROR_TIPO;
@@ -1168,15 +1219,15 @@ public class SintacticoSemantico {
     //PRIMEROS(SELWHEN_P) = {PRIMEROS(SELWHEN),empty }
     //----------------------PRIMEROS(SELWHEN) = {when}
     private void SELWHEN_P(Atributos SELWHEN_P) {
-        
+
         Atributos SELWHEN = new Atributos();
-        
+
         if (preAnalisis.equals("when")) {
             //SELWHEN’ -> SELWHEN
             SELWHEN(SELWHEN);
             if (analizarSemantica) {
                 //Acción semántica
-                if(SELWHEN.tipo.equals(VACIO)) {
+                if (SELWHEN.tipo.equals(VACIO)) {
                     SELWHEN_P.tipo = VACIO;
                 } else {
                     SELWHEN_P.tipo = ERROR_TIPO;
@@ -1195,16 +1246,16 @@ public class SintacticoSemantico {
 
     //PRIMEROS(SELELSE) = {else,empty}
     private void SELELSE(Atributos SELELSE) {
-        
+
         Atributos SENTENCIA = new Atributos();
-        
+
         if (preAnalisis.equals("else")) {
             //SELELSE -> else SENTENCIA
             emparejar("else");
             SENTENCIA(SENTENCIA);
             if (analizarSemantica) {
                 //Acción semántica
-                if(SENTENCIA.tipo.equals(VACIO)) {
+                if (SENTENCIA.tipo.equals(VACIO)) {
                     SELELSE.tipo = VACIO;
                 } else {
                     SELELSE.tipo = ERROR_TIPO;
@@ -1223,10 +1274,10 @@ public class SintacticoSemantico {
 
     //PRIMEROS(SENREP) = {while}
     private void SENREP(Atributos SENREP) {
-        
+
         Atributos EXPRCOND = new Atributos();
         Atributos SENTENCIAS = new Atributos();
-        
+
         if (preAnalisis.equals("while")) {
             //SENREP -> while EXPRCOND begin SENTENCIAS end
             emparejar("while");
@@ -1236,7 +1287,7 @@ public class SintacticoSemantico {
             emparejar("end");
             if (analizarSemantica) {
                 //Acción semántica
-                if(EXPRCOND.tipo.equals("booleano") && SENTENCIAS.tipo.equals(VACIO)) {
+                if (EXPRCOND.tipo.equals("booleano") && SENTENCIAS.tipo.equals(VACIO)) {
                     SENREP.tipo = VACIO;
                 } else {
                     SENREP.tipo = ERROR_TIPO;
@@ -1253,9 +1304,9 @@ public class SintacticoSemantico {
 //Primeros (SENTASIG) = {assign}
 //Primeros (SENTSELECT) = {select}
     private void SENTASIG(Atributos SENTASIG) {
-        
+
         Atributos EXPRARIT = new Atributos();
-        
+
         if (preAnalisis.equals("assign")) {
             //SENTASIG -> assign idvar opasig EXPRARIT
             emparejar("assign");
@@ -1264,7 +1315,7 @@ public class SintacticoSemantico {
             EXPRARIT(EXPRARIT);
             if (analizarSemantica) {
                 //Acción semántica
-                if(EXPRARIT.tipo.equals(VACIO)) {
+                if (EXPRARIT.tipo.equals(VACIO)) {
                     SENTASIG.tipo = VACIO;
                 } else {
                     SENTASIG.tipo = ERROR_TIPO;
@@ -1278,10 +1329,10 @@ public class SintacticoSemantico {
     }
 
     private void SENTSELECT(Atributos SENTSELECT) {
-        
+
         Atributos SENTSELECTC = new Atributos();
         Atributos EXPRCOND = new Atributos();
-        
+
         if (preAnalisis.equals("select")) {
             //SENTSELECT -> select idvar opasig id SENTSELECTC from id where EXPRCOND
             emparejar("select");
@@ -1295,7 +1346,7 @@ public class SintacticoSemantico {
             EXPRCOND(EXPRCOND);
             if (analizarSemantica) {
                 //Acción semántica
-                if(SENTSELECTC.tipo.equals(VACIO) && EXPRCOND.tipo.equals("booleano")) {
+                if (SENTSELECTC.tipo.equals(VACIO) && EXPRCOND.tipo.equals("booleano")) {
                     SENTSELECT.tipo = VACIO;
                 } else {
                     SENTSELECT.tipo = ERROR_TIPO;
@@ -1310,9 +1361,9 @@ public class SintacticoSemantico {
 //--- Autor: Jose Eduardo Rodriguez Diaz 13130453
     //Primeros (SENTSELECT)= {, , empty}
     private void SENTSELECTC(Atributos SENTSELECTC1) {
-        
-        Atributos SENTSELECTC2 = new Atributos(); 
-        
+
+        Atributos SENTSELECTC2 = new Atributos();
+
         if (preAnalisis.equals(",")) {
             //SENTSELECTC -> , idvar opasig id SENTSELECTC
             emparejar(",");
@@ -1322,7 +1373,7 @@ public class SintacticoSemantico {
             SENTSELECTC(SENTSELECTC2);
             if (analizarSemantica) {
                 //Acción semántica
-                if(SENTSELECTC2.tipo.equals(VACIO)) {
+                if (SENTSELECTC2.tipo.equals(VACIO)) {
                     SENTSELECTC1.tipo = VACIO;
                 } else {
                     SENTSELECTC1.tipo = ERROR_TIPO;
@@ -1377,8 +1428,8 @@ public class SintacticoSemantico {
 
     private void TABLA(Atributos TABLA) {
         //PRIMEROS TABLA = {create}
-        Atributos TABCOLUMNAS = new Atributos(); 
-        
+        Atributos TABCOLUMNAS = new Atributos();
+
         if (preAnalisis.equals("create")) {
             //TABLA ---> create table id (TABCOLUMNAS)
             emparejar("create");
@@ -1389,7 +1440,7 @@ public class SintacticoSemantico {
             emparejar(")");
             if (analizarSemantica) {
                 //Acción semántica
-                if(TABCOLUMNAS.tipo.equals(VACIO)) {
+                if (TABCOLUMNAS.tipo.equals(VACIO)) {
                     TABLA.tipo = VACIO;
                 } else {
                     TABLA.tipo = ERROR_TIPO;
@@ -1410,7 +1461,7 @@ public class SintacticoSemantico {
         Atributos TIPO = new Atributos();
         Atributos NULO = new Atributos();
         Atributos TABCOLUMNAS_P = new Atributos();
-        
+
         if (preAnalisis.equals("id")) {
             //TABCOLUMNAS -> { id TIPO NULO TABCOLUMNAS_P }
             emparejar("id");
@@ -1419,7 +1470,7 @@ public class SintacticoSemantico {
             TABCOLUMNAS_P(TABCOLUMNAS_P);
             if (analizarSemantica) {
                 //Acción semántica
-                if(!TIPO.tipo.equals(ERROR_TIPO) && !NULO.tipo.equals(ERROR_TIPO) && TABCOLUMNAS_P.tipo.equals(VACIO)) {
+                if (!TIPO.tipo.equals(ERROR_TIPO) && !NULO.tipo.equals(ERROR_TIPO) && TABCOLUMNAS_P.tipo.equals(VACIO)) {
                     TABCOLUMNAS.tipo = VACIO;
                 } else {
                     TABCOLUMNAS.tipo = ERROR_TIPO;
@@ -1446,7 +1497,7 @@ public class SintacticoSemantico {
             TABCOLUMNAS(TABCOLUMNAS);
             if (analizarSemantica) {
                 //Acción semántica
-                if(TABCOLUMNAS.tipo.equals(VACIO)) {
+                if (TABCOLUMNAS.tipo.equals(VACIO)) {
                     TABCOLUMNAS_P.tipo = VACIO;
                 } else {
                     TABCOLUMNAS_P.tipo = ERROR_TIPO;
